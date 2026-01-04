@@ -1,6 +1,6 @@
 // src/api.ts
 import axios from 'axios';
-
+import { toastStore } from './toast';
 const api = axios.create({
   baseURL: 'http://127.0.0.1:3000/api',
   timeout: 5000,
@@ -20,13 +20,15 @@ api.interceptors.response.use(
   (error) => {
     if (error.response) {
       const { status, data } = error.response;
-      
+      const message = data?.message || '网络连接异常';
+      // 自动显示错误 Toast
+      toastStore.show(message, 'error');
       // 1. 如果 Token 过期
       if (status === 401) {
         localStorage.removeItem('token');
         // 可以触发全局事件让页面跳转到登录或刷新
         if (!window.location.pathname.includes('/login')) {
-           // window.location.reload(); 
+          // window.location.reload(); 
         }
       }
 

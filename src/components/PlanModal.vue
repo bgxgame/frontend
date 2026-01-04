@@ -122,6 +122,7 @@
 import { ref, watch, computed } from 'vue';
 import api from '../api';
 import type { Plan } from '../types';
+import { toastStore } from '../toast';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -187,19 +188,16 @@ const handleSubmit = async () => {
 
     if (isEditMode.value && props.editData) {
       await api.patch(`/plans/${props.editData.id}`, payload);
+      toastStore.show('计划更新成功'); // 替换 alert
     } else {
       await api.post('/plans', payload);
+      toastStore.show('新计划已创建'); // 替换 alert
     }
 
     emit('saved'); // 通知父组件：保存成功
   } catch (err: any) {
-    const errorData = err.response?.data;
-    if (errorData) {
-      if (errorData.errors) fieldErrors.value = errorData.errors;
-      generalError.value = errorData.message || '操作失败';
-    } else {
-      generalError.value = '无法连接到服务器';
-    }
+    // 同样，这里的错误会自动被 api.ts 拦截器捕获并弹出错误 Toast
+    // 我们只需要处理表单内部的 fieldErrors 即可 
   } finally {
     loading.value = false;
   }

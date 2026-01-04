@@ -31,6 +31,7 @@
       <PlanList ref="planListRef" @edit="openEditModal" />
     </main>
 
+    <ToastContainer />
     <!-- 模态框 -->
     <LoginModal :isOpen="showLoginModal" @close="showLoginModal = false" @login-success="handleLoginSuccess" />
     
@@ -49,6 +50,7 @@ import { ref } from 'vue';
 import PlanList from './components/PlanList.vue';
 import LoginModal from './components/LoginModal.vue';
 import PlanModal from './components/PlanModal.vue';
+import ToastContainer from './components/ToastContainer.vue';
 import type { Plan } from './types';
 
 const isLoggedIn = ref(!!localStorage.getItem('token'));
