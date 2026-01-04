@@ -1,0 +1,954 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+.gitignore
+index.html
+package.json
+postcss.config.js
+public/vite.svg
+README.md
+src/api.ts
+src/App.vue
+src/assets/vue.svg
+src/components/LoginModal.vue
+src/components/PlanList.vue
+src/components/PlanModal.vue
+src/main.ts
+src/style.css
+src/types.ts
+tailwind.config.js
+tsconfig.app.json
+tsconfig.json
+tsconfig.node.json
+vite.config.ts
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path=".gitignore">
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+</file>
+
+<file path="package.json">
+{
+  "name": "frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@heroicons/vue": "^2.2.0",
+    "axios": "^1.13.2",
+    "date-fns": "^4.1.0",
+    "vue": "^3.5.24"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "@vue/tsconfig": "^0.8.1",
+    "autoprefixer": "^10.4.23",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
+    "typescript": "~5.9.3",
+    "vite": "^7.2.4",
+    "vue-tsc": "^3.1.4"
+  }
+}
+</file>
+
+<file path="public/vite.svg">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="iconify iconify--logos" width="31.88" height="32" preserveAspectRatio="xMidYMid meet" viewBox="0 0 256 257"><defs><linearGradient id="IconifyId1813088fe1fbc01fb466" x1="-.828%" x2="57.636%" y1="7.652%" y2="78.411%"><stop offset="0%" stop-color="#41D1FF"></stop><stop offset="100%" stop-color="#BD34FE"></stop></linearGradient><linearGradient id="IconifyId1813088fe1fbc01fb467" x1="43.376%" x2="50.316%" y1="2.242%" y2="89.03%"><stop offset="0%" stop-color="#FFEA83"></stop><stop offset="8.333%" stop-color="#FFDD35"></stop><stop offset="100%" stop-color="#FFA800"></stop></linearGradient></defs><path fill="url(#IconifyId1813088fe1fbc01fb466)" d="M255.153 37.938L134.897 252.976c-2.483 4.44-8.862 4.466-11.382.048L.875 37.958c-2.746-4.814 1.371-10.646 6.827-9.67l120.385 21.517a6.537 6.537 0 0 0 2.322-.004l117.867-21.483c5.438-.991 9.574 4.796 6.877 9.62Z"></path><path fill="url(#IconifyId1813088fe1fbc01fb467)" d="M185.432.063L96.44 17.501a3.268 3.268 0 0 0-2.634 3.014l-5.474 92.456a3.268 3.268 0 0 0 3.997 3.378l24.777-5.718c2.318-.535 4.413 1.507 3.936 3.838l-7.361 36.047c-.495 2.426 1.782 4.5 4.151 3.78l15.304-4.649c2.372-.72 4.652 1.36 4.15 3.788l-11.698 56.621c-.732 3.542 3.979 5.473 5.943 2.437l1.313-2.028l72.516-144.72c1.215-2.423-.88-5.186-3.54-4.672l-25.505 4.922c-2.396.462-4.435-1.77-3.759-4.114l16.646-57.705c.677-2.35-1.37-4.583-3.769-4.113Z"></path></svg>
+</file>
+
+<file path="src/api.ts">
+// src/api.ts
+import axios from 'axios';
+
+// 创建 axios 实例
+const api = axios.create({
+  // 指向你的 Rust 后端地址
+  baseURL: 'http://127.0.0.1:3000/api', 
+  timeout: 5000,
+});
+
+// 请求拦截器：自动携带 Token
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export default api;
+</file>
+
+<file path="src/assets/vue.svg">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="iconify iconify--logos" width="37.07" height="36" preserveAspectRatio="xMidYMid meet" viewBox="0 0 256 198"><path fill="#41B883" d="M204.8 0H256L128 220.8L0 0h97.92L128 51.2L157.44 0h47.36Z"></path><path fill="#41B883" d="m0 0l128 220.8L256 0h-51.2L128 132.48L50.56 0H0Z"></path><path fill="#35495E" d="M50.56 0L128 133.12L204.8 0h-47.36L128 51.2L97.92 0H50.56Z"></path></svg>
+</file>
+
+<file path="src/types.ts">
+// src/types.ts
+
+export interface Plan {
+  id: number;
+  title: string;
+  description?: string;
+  status: 'pending' | 'in_progress' | 'completed';
+  category?: string;
+  due_date?: string;
+  is_public: boolean;
+  created_at?: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  username: string;
+}
+</file>
+
+<file path="index.html">
+<!-- index.html -->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>frontend</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
+</file>
+
+<file path="postcss.config.js">
+// postcss.config.js
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
+</file>
+
+<file path="src/App.vue">
+<!-- src/App.vue -->
+<template>
+  <div class="min-h-screen bg-[#FAFAFC] font-sans text-[#1D1D20]">
+    <!-- 顶部导航 -->
+    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-[#E6E7E8]">
+      <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-14 items-center">
+          <div class="flex items-center">
+            <span class="text-xl font-bold text-[#5E6AD2] tracking-tight">LifePlan</span>
+          </div>
+          <div class="flex items-center space-x-3">
+            <div v-if="isLoggedIn" class="flex items-center gap-3">
+              <span class="text-sm font-medium text-[#67657F]">Admin</span>
+              <button @click="openCreateModal" class="px-3 py-1.5 rounded-md font-medium transition-all duration-200 border border-transparent bg-[#5E6AD2] text-white hover:bg-[#525BC2]">
+                + 新建
+              </button>
+              <button @click="logout" class="text-sm text-[#67657F] hover:text-red-500 transition">
+                退出
+              </button>
+            </div>
+            <button v-else @click="showLoginModal = true" class="text-sm font-medium text-[#5E6AD2] hover:text-[#525BC2]">
+              管理员登录
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- 主内容 -->
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <PlanList ref="planListRef" @edit="openEditModal" />
+    </main>
+
+    <!-- 模态框 -->
+    <LoginModal :isOpen="showLoginModal" @close="showLoginModal = false" @login-success="handleLoginSuccess" />
+    
+    <PlanModal 
+      :isOpen="showPlanModal" 
+      :editData="currentEditPlan" 
+      @close="showPlanModal = false" 
+      @saved="refreshList" 
+    />
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue';
+import PlanList from './components/PlanList.vue';
+import LoginModal from './components/LoginModal.vue';
+import PlanModal from './components/PlanModal.vue';
+import type { Plan } from './types';
+
+// 状态
+const isLoggedIn = ref(!!localStorage.getItem('token'));
+const showLoginModal = ref(false);
+const showPlanModal = ref(false);
+const currentEditPlan = ref<Plan | null>(null);
+const planListRef = ref(); // 用于调用子组件的刷新方法
+
+// 登录成功
+const handleLoginSuccess = () => {
+  isLoggedIn.value = true;
+  refreshList(); // 登录后刷新列表，可能看到隐藏的私有计划
+};
+
+// 退出登录
+const logout = () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('username');
+  isLoggedIn.value = false;
+  location.reload();
+};
+
+// 打开新建
+const openCreateModal = () => {
+  currentEditPlan.value = null; // 清空编辑数据
+  showPlanModal.value = true;
+};
+
+// 打开编辑 (由 PlanList 子组件触发)
+const openEditModal = (plan: Plan) => {
+  currentEditPlan.value = plan;
+  showPlanModal.value = true;
+};
+
+// 刷新列表
+const refreshList = () => {
+  // 调用 PlanList 组件内部暴露的 fetchPlans 方法
+  if (planListRef.value) {
+    planListRef.value.fetchPlans();
+  }
+};
+</script>
+</file>
+
+<file path="src/components/LoginModal.vue">
+<!-- src/components/LoginModal.vue -->
+<template>
+  <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <!-- 遮罩层 -->
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" @click="$emit('close')"></div>
+    
+    <!-- 内容框 -->
+    <div class="relative bg-white rounded-lg shadow-xl w-full max-w-sm p-6 overflow-hidden border border-[#E6E7E8]">
+      <h2 class="text-lg font-semibold text-center mb-4 text-[#1D1D20]">管理员登录</h2>
+      
+      <form @submit.prevent="handleLogin" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-[#67657F] mb-1">用户名</label>
+          <input 
+            v-model="form.username" 
+            type="text" 
+            class="w-full px-3 py-2 border border-[#E6E7E8] rounded-md focus:ring-1 focus:ring-[#5E6AD2] focus:border-[#5E6AD2] outline-none transition"
+            required
+          />
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-[#67657F] mb-1">密码</label>
+          <input 
+            v-model="form.password" 
+            type="password" 
+            class="w-full px-3 py-2 border border-[#E6E7E8] rounded-md focus:ring-1 focus:ring-[#5E6AD2] focus:border-[#5E6AD2] outline-none transition"
+            required
+          />
+        </div>
+
+        <div v-if="errorMsg" class="text-xs text-red-500 text-center bg-red-50 p-2 rounded">
+          {{ errorMsg }}
+        </div>
+
+        <button 
+          type="submit" 
+          :disabled="loading"
+          class="w-full px-3 py-1.5 rounded-md font-medium transition-all duration-200 border border-transparent bg-[#5E6AD2] text-white hover:bg-[#525BC2]"
+        >
+          {{ loading ? '登录中...' : '立即登录' }}
+        </button>
+      </form>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, reactive } from 'vue';
+import api from '../api';
+
+defineProps<{ isOpen: boolean }>();
+const emit = defineEmits(['close', 'login-success']);
+
+const loading = ref(false);
+const errorMsg = ref('');
+const form = reactive({ username: '', password: '' });
+
+const handleLogin = async () => {
+  loading.value = true;
+  errorMsg.value = '';
+  
+  try {
+    const res = await api.post('/login', form);
+    // 保存 Token 和 用户名
+    localStorage.setItem('token', res.data.token);
+    localStorage.setItem('username', res.data.username);
+    
+    // 通知父组件登录成功
+    emit('login-success');
+    emit('close');
+  } catch (err: any) {
+    console.error(err);
+    errorMsg.value = err.response?.status === 401 
+      ? '用户名或密码错误' 
+      : '登录失败，请检查网络';
+  } finally {
+    loading.value = false;
+  }
+};
+</script>
+</file>
+
+<file path="src/components/PlanList.vue">
+<!-- src/components/PlanList.vue -->
+<template>
+  <div class="space-y-6">
+    <!-- 标题区 -->
+    <div class="flex justify-between items-center border-b border-[#E6E7E8] pb-4">
+      <div>
+        <h2 class="text-xl font-semibold text-[#1D1D20]">我的计划</h2>
+        <p class="text-[#67657F] text-sm mt-1">记录生活，追踪进度</p>
+      </div>
+      <span class="text-xs text-[#9593A3] bg-white px-2 py-1 rounded border border-[#E6E7E8]">
+        共 {{ plans.length }} 项
+      </span>
+    </div>
+
+    <!-- 加载状态 -->
+    <div v-if="loading" class="text-center py-12 text-[#67657F]">
+      <div class="animate-spin text-4xl mb-2">⏳</div>
+      正在加载数据...
+    </div>
+
+    <!-- 空状态 -->
+    <div v-else-if="plans.length === 0" class="text-center py-12 bg-white rounded-lg border border-[#E6E7E8]">
+      <p class="text-[#67657F]">暂时还没有计划哦 ~</p>
+    </div>
+
+    <!-- 列表展示 -->
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div 
+        v-for="plan in plans" 
+        :key="plan.id" 
+        class="bg-white rounded-lg border border-[#E6E7E8] shadow-sm transition-all duration-200 relative flex flex-col group hover:shadow-md p-4"
+      >
+        <div :class="['absolute left-0 top-0 bottom-0 w-0.5 rounded-full', statusColor(plan.status)]"></div>
+
+        <!-- 头部 -->
+        <div class="flex justify-between items-start mb-3 pl-2">
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[#FAFAFC] text-[#67657F]">
+            {{ plan.category || '未分类' }}
+          </span>
+          <!-- 只有登录才显示操作按钮 -->
+          <div v-if="isLoggedIn" class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button @click="$emit('edit', plan)" class="text-xs text-[#67657F] hover:text-[#5E6AD2]">编辑</button>
+            <button @click="deletePlan(plan.id)" class="text-xs text-[#67657F] hover:text-red-500">删除</button>
+          </div>
+        </div>
+
+        <!-- 内容 -->
+        <div class="pl-2 mb-3 flex-grow">
+          <h3 class="font-semibold text-[#1D1D20] leading-tight">{{ plan.title }}</h3>
+          <p class="text-[#67657F] text-sm mt-2 line-clamp-3">{{ plan.description }}</p>
+        </div>
+
+        <!-- 底部 -->
+        <div class="pl-2 mt-auto pt-3 border-t border-[#E6E7E8] flex justify-between items-center text-xs text-[#9593A3]">
+          <span class="flex items-center">
+            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            </svg>
+            {{ formatDate(plan.due_date) }}
+          </span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium" :class="statusBgColor(plan.status)">
+            {{ formatStatus(plan.status) }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import api from '../api';
+import type { Plan } from '../types';
+
+// 定义 Emits
+const emit = defineEmits(['edit']);
+
+const plans = ref<Plan[]>([]);
+const loading = ref(true);
+const isLoggedIn = ref(!!localStorage.getItem('token')); // 简单判断
+
+const fetchPlans = async () => {
+  loading.value = true;
+  try {
+    const res = await api.get<Plan[]>('/plans');
+    plans.value = res.data;
+    // 更新登录状态，防止 token 过期后这里状态不一致
+    isLoggedIn.value = !!localStorage.getItem('token');
+  } catch (error) {
+    console.error(error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+const deletePlan = async (id: number) => {
+  if (!confirm('确定要删除这个计划吗？')) return;
+  try {
+    await api.delete(`/plans/${id}`);
+    await fetchPlans(); // 删除后刷新
+  } catch (err) {
+    alert('删除失败');
+  }
+};
+
+const statusColor = (status: string) => {
+  switch (status) {
+    case 'completed': return 'bg-emerald-500';
+    case 'in_progress': return 'bg-amber-500';
+    default: return 'bg-[#9593A3]';
+  }
+};
+
+const statusBgColor = (status: string) => {
+  switch (status) {
+    case 'completed': return 'bg-emerald-100 text-emerald-800';
+    case 'in_progress': return 'bg-amber-100 text-amber-800';
+    default: return 'bg-[#FAFAFC] text-[#67657F]';
+  }
+};
+
+const formatStatus = (s: string) => {
+    const map: Record<string, string> = { pending: '待办', in_progress: '进行中', completed: '完成' };
+    return map[s] || s;
+}
+
+const formatDate = (dateStr?: string) => {
+  if (!dateStr) return '无截止日期';
+  return new Date(dateStr).toLocaleDateString('zh-CN');
+};
+
+onMounted(fetchPlans);
+
+// 暴露给父组件使用
+defineExpose({ fetchPlans });
+</script>
+</file>
+
+<file path="src/components/PlanModal.vue">
+<!-- src/components/PlanModal.vue -->
+<template>
+  <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" @click="$emit('close')"></div>
+    
+    <div class="relative bg-white rounded-lg shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto border border-[#E6E7E8]">
+      <h2 class="text-lg font-semibold mb-4 text-[#1D1D20]">
+        {{ isEditMode ? '编辑计划' : '新建计划' }}
+      </h2>
+
+      <form @submit.prevent="handleSubmit" class="space-y-4">
+        <!-- 标题 -->
+        <div>
+          <label class="block text-sm font-medium text-[#67657F] mb-1">标题</label>
+          <input 
+            v-model="form.title" 
+            type="text" 
+            required 
+            class="w-full px-3 py-2 border border-[#E6E7E8] rounded-md focus:ring-1 focus:ring-[#5E6AD2] focus:border-[#5E6AD2] outline-none transition" 
+          />
+        </div>
+
+        <!-- 描述 -->
+        <div>
+          <label class="block text-sm font-medium text-[#67657F] mb-1">描述</label>
+          <textarea 
+            v-model="form.description" 
+            rows="3" 
+            class="w-full px-3 py-2 border border-[#E6E7E8] rounded-md focus:ring-1 focus:ring-[#5E6AD2] focus:border-[#5E6AD2] outline-none transition"
+          ></textarea>
+        </div>
+
+        <!-- 分类与状态 -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-[#67657F] mb-1">分类</label>
+            <select 
+              v-model="form.category" 
+              class="w-full px-3 py-2 border border-[#E6E7E8] rounded-md outline-none bg-white focus:ring-1 focus:ring-[#5E6AD2] focus:border-[#5E6AD2]"
+            >
+              <option value="work">工作</option>
+              <option value="life">生活</option>
+              <option value="study">学习</option>
+            </select>
+          </div>
+          <div v-if="isEditMode">
+            <label class="block text-sm font-medium text-[#67657F] mb-1">状态</label>
+            <select 
+              v-model="form.status" 
+              class="w-full px-3 py-2 border border-[#E6E7E8] rounded-md outline-none bg-white focus:ring-1 focus:ring-[#5E6AD2] focus:border-[#5E6AD2]"
+            >
+              <option value="pending">待办</option>
+              <option value="in_progress">进行中</option>
+              <option value="completed">已完成</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 日期与可见性 -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-[#67657F] mb-1">截止日期</label>
+            <input 
+              v-model="form.due_date" 
+              type="date" 
+              class="w-full px-3 py-2 border border-[#E6E7E8] rounded-md outline-none focus:ring-1 focus:ring-[#5E6AD2] focus:border-[#5E6AD2]" 
+            />
+          </div>
+          <div class="flex items-center mt-6">
+            <input 
+              v-model="form.is_public" 
+              type="checkbox" 
+              id="public" 
+              class="w-4 h-4 text-[#5E6AD2] rounded border-[#E6E7E8] focus:ring-[#5E6AD2]"
+            >
+            <label for="public" class="ml-2 text-sm text-[#67657F]">公开可见</label>
+          </div>
+        </div>
+
+        <!-- 按钮组 -->
+        <div class="flex justify-end gap-2 pt-4 border-t border-[#E6E7E8] mt-2">
+          <button 
+            type="button" 
+            @click="$emit('close')" 
+            class="px-3 py-1.5 rounded-md font-medium transition-all duration-200 border border-transparent bg-transparent border border-[#E6E7E8] text-[#67657F] hover:bg-white"
+          >
+            取消
+          </button>
+          <button 
+            type="submit" 
+            class="px-3 py-1.5 rounded-md font-medium transition-all duration-200 border border-transparent bg-[#5E6AD2] text-white hover:bg-[#525BC2]"
+          >
+            {{ isEditMode ? '保存修改' : '立即创建' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, watch, computed } from 'vue';
+import api from '../api';
+import type { Plan } from '../types';
+
+const props = defineProps<{
+  isOpen: boolean;
+  editData?: Plan | null; // 如果有值，就是编辑模式
+}>();
+
+const emit = defineEmits(['close', 'saved']);
+
+// 初始表单数据
+const initialForm = {
+  title: '',
+  description: '',
+  category: 'life',
+  status: 'pending',
+  due_date: '',
+  is_public: true,
+};
+
+const form = ref({ ...initialForm });
+
+// 判断是否是编辑模式
+const isEditMode = computed(() => !!props.editData);
+
+// 当打开窗口或 editData 变化时，重置表单
+watch(() => props.editData, (newVal) => {
+  if (newVal) {
+    // 编辑模式：填充数据
+    form.value = {
+      ...newVal,
+      // 格式化日期以适配 input type="date"
+      due_date: newVal.due_date ? newVal.due_date.split('T')[0] : '',
+    };
+  } else {
+    // 新建模式：清空
+    form.value = { ...initialForm };
+  }
+}, { immediate: true });
+
+const handleSubmit = async () => {
+  try {
+    // 构造发送给后端的数据 (处理日期格式)
+    const payload = {
+      ...form.value,
+      due_date: form.value.due_date ? new Date(form.value.due_date).toISOString() : null,
+    };
+
+    if (isEditMode.value && props.editData) {
+      // 编辑：PATCH
+      await api.patch(`/plans/${props.editData.id}`, payload);
+    } else {
+      // 新建：POST
+      await api.post('/plans', payload);
+    }
+    
+    emit('saved'); // 通知父组件刷新列表
+    emit('close');
+  } catch (err) {
+    alert('操作失败');
+    console.error(err);
+  }
+};
+</script>
+</file>
+
+<file path="src/main.ts">
+// main.ts
+import { createApp } from 'vue'
+import './style.css'
+import App from './App.vue'
+
+createApp(App).mount('#app')
+</file>
+
+<file path="src/style.css">
+/* style.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-[#FAFAFC] text-[#1D1D20];
+}
+
+/* Linear风格的滚动条 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D1D1D6;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #B1B1B6;
+}
+
+/* Linear风格的输入框 */
+input, textarea, select {
+  @apply transition-colors duration-200;
+}
+
+input:focus, textarea:focus, select:focus {
+  @apply ring-0 outline-none;
+}
+
+/* Linear风格的按钮 */
+.btn-linear {
+  @apply px-3 py-1.5 rounded-md font-medium transition-all duration-200 border border-transparent;
+}
+
+.btn-linear:hover {
+  @apply bg-opacity-90;
+}
+
+.btn-primary {
+  @apply bg-[#5E6AD2] text-white hover:bg-[#525BC2];
+}
+
+.btn-secondary {
+  @apply bg-[#67657F] text-white hover:bg-[#5B5A72];
+}
+
+.btn-outline {
+  @apply bg-transparent border border-[#E6E7E8] text-[#67657F] hover:bg-white;
+}
+
+/* Linear风格的卡片 */
+.card-linear {
+  @apply bg-white rounded-lg border border-[#E6E7E8] shadow-sm transition-all duration-200;
+}
+
+/* Linear风格的标签 */
+.tag-linear {
+  @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
+}
+</file>
+
+<file path="tailwind.config.js">
+// tailwind.config.js
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{vue,js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        linear: {
+          primary: '#5E6AD2',
+          secondary: '#67657F',
+          background: '#FAFAFC',
+          surface: '#FFFFFF',
+          border: '#E6E7E8',
+          text: {
+            primary: '#1D1D20',
+            secondary: '#67657F',
+            muted: '#9593A3'
+          }
+        }
+      }
+    },
+  },
+  plugins: [],
+}
+</file>
+
+<file path="tsconfig.app.json">
+// tsconfig.app.json
+{
+  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "types": ["vite/client"],
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"]
+}
+</file>
+
+<file path="tsconfig.json">
+// tsconfig.json
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
+}
+</file>
+
+<file path="tsconfig.node.json">
+// tsconfig.node.json
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "types": ["node"],
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  },
+  "include": ["vite.config.ts"]
+}
+</file>
+
+<file path="vite.config.ts">
+//vite.config.ts
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [vue()],
+})
+</file>
+
+<file path="README.md">
+## 项目概述
+
+这是一个基于Vue 3 + TypeScript + Vite构建的前端项目，主要功能是个人计划管理系统。项目采用了Tailwind CSS作为样式框架，UI设计参考了Linear应用的风格，具有现代、简洁的界面。
+
+## 技术栈
+
+- **前端框架**: Vue 3 (使用Composition API)
+- **编程语言**: TypeScript
+- **构建工具**: Vite
+- **样式框架**: Tailwind CSS
+- **HTTP客户端**: Axios (用于API请求)
+- **日期处理**: date-fns
+
+## 项目结构
+
+```
+src/
+├── components/          # 可复用的Vue组件
+│   ├── LoginModal.vue  # 登录模态框
+│   ├── PlanList.vue    # 计划列表组件
+│   └── PlanModal.vue   # 计划编辑/创建模态框
+├── App.vue             # 主应用组件
+├── api.ts              # API请求封装
+├── main.ts             # 应用入口文件
+├── style.css           # 全局样式（Tailwind相关）
+└── types.ts            # TypeScript类型定义
+```
+
+## 主要功能
+
+1. **用户认证**：
+   - 管理员登录功能
+   - 基于Token的身份验证
+
+2. **计划管理**：
+   - 查看计划列表
+   - 创建新计划
+   - 编辑现有计划
+   - 删除计划
+   - 计划状态管理（待办、进行中、完成）
+
+3. **数据展示**：
+   - 按分类显示计划
+   - 显示截止日期
+   - 状态标签显示
+   - 公开/私有计划区分
+
+## UI设计特色
+
+项目采用Linear风格的UI设计，具有以下特点：
+
+1. **极简主义**：大量使用留白，界面清爽
+2. **柔和配色**：使用柔和的蓝色作为主色调
+3. **精致细节**：精细的边框、阴影和过渡效果
+4. **现代交互**：悬停效果、平滑过渡等
+
+## 代码特点
+
+1. **组件化设计**：功能模块化，易于维护
+2. **TypeScript支持**：类型安全，减少运行时错误
+3. **响应式设计**：适配不同屏幕尺寸
+4. **状态管理**：合理使用Vue的响应式系统
+
+## Tailwind CSS使用
+
+项目充分利用了Tailwind CSS的实用性优先的CSS框架特性：
+
+- 通过`@tailwind`指令引入基础样式
+- 使用`@apply`组合常用样式类
+- 自定义Linear风格的颜色主题
+
+## 开发配置
+
+- **开发服务器**: `npm run dev`
+- **构建生产版本**: `npm run build`
+- **预览生产版本**: `npm run preview`
+
+这个项目展示了现代前端开发的最佳实践，包括组件化、类型安全、响应式设计等，同时通过参考Linear的UI风格实现了美观的用户界面。
+</file>
+
+</files>
