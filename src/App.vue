@@ -34,11 +34,12 @@
     <!-- 模态框 -->
     <LoginModal :isOpen="showLoginModal" @close="showLoginModal = false" @login-success="handleLoginSuccess" />
     
+    <!-- 修复点：绑定统一的 closePlanModal 函数 -->
     <PlanModal 
       :isOpen="showPlanModal" 
       :editData="currentEditPlan" 
-      @close="showPlanModal = false" 
-      @saved="() => { refreshList(); showPlanModal = false; }" 
+      @close="closePlanModal" 
+      @saved="handleSaved" 
     />
   </div>
 </template>
@@ -50,20 +51,17 @@ import LoginModal from './components/LoginModal.vue';
 import PlanModal from './components/PlanModal.vue';
 import type { Plan } from './types';
 
-// 状态
 const isLoggedIn = ref(!!localStorage.getItem('token'));
 const showLoginModal = ref(false);
 const showPlanModal = ref(false);
 const currentEditPlan = ref<Plan | null>(null);
-const planListRef = ref(); // 用于调用子组件的刷新方法
+const planListRef = ref(); 
 
-// 登录成功
 const handleLoginSuccess = () => {
   isLoggedIn.value = true;
-  refreshList(); // 登录后刷新列表，可能看到隐藏的私有计划
+  refreshList();
 };
 
-// 退出登录
 const logout = () => {
   localStorage.removeItem('token');
   localStorage.removeItem('username');
@@ -71,21 +69,33 @@ const logout = () => {
   location.reload();
 };
 
-// 打开新建
+// --- 弹窗控制逻辑 ---
+
 const openCreateModal = () => {
-  currentEditPlan.value = null; // 清空编辑数据
+  currentEditPlan.value = null; // 确保清空
   showPlanModal.value = true;
 };
 
-// 打开编辑 (由 PlanList 子组件触发)
 const openEditModal = (plan: Plan) => {
-  currentEditPlan.value = plan;
+  currentEditPlan.value = plan; // 设置待编辑数据
   showPlanModal.value = true;
 };
 
-// 刷新列表
+// 核心修复函数：负责彻底清理状态
+const closePlanModal = () => {
+  showPlanModal.value = false;
+  // 延迟清空数据，避免弹窗关闭动画中内容突然跳变
+  setTimeout(() => {
+    currentEditPlan.value = null;
+  }, 200);
+};
+
+const handleSaved = () => {
+  refreshList();
+  closePlanModal(); // 保存后彻底关闭并清理
+};
+
 const refreshList = () => {
-  // 调用 PlanList 组件内部暴露的 fetchPlans 方法
   if (planListRef.value) {
     planListRef.value.fetchPlans();
   }
