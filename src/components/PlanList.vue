@@ -66,7 +66,7 @@
 
     <!-- 3. 内容展示区 -->
     <div v-if="loading" class="flex flex-col items-center justify-center py-32">
-      <div class="w-10 h-10 border-2 border-[#5E6AD2] border-t-transparent rounded-full animate-spin"></div>
+      <div class="w-10 h-10 border-2 border-[#5E6AD2] border-t-white/20 border-t-transparent rounded-full animate-spin"></div>
     </div>
 
     <div v-else-if="plans.length === 0" class="text-center py-32 bg-white rounded-xl border border-dashed border-[#E6E7E8]">
@@ -77,7 +77,7 @@
       <button @click="resetFilters" class="mt-4 text-[#5E6AD2] text-xs font-bold hover:underline">显示所有任务</button>
     </div>
 
-    <!-- 3a. 列表模式 - 三列自适应网格 -->
+    <!-- 3a. 列表模式 -->
     <div v-else-if="viewMode === 'list'" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 animate-in fade-in duration-300">
       <div 
         v-for="plan in plans" :key="plan.id" 
@@ -95,7 +95,13 @@
           </div>
         </div>
         <h3 class="font-bold text-[#1D1D20] text-[16px] mb-2 group-hover:text-[#5E6AD2] transition-colors line-clamp-1">{{ plan.title }}</h3>
-        <p class="text-[#67657F] text-[13px] line-clamp-2 leading-relaxed mb-6 h-10">{{ plan.description || '无详细描述' }}</p>
+        
+        <!-- Markdown 渲染区域 (列表模式) -->
+        <div 
+          class="text-[#67657F] text-[13px] mt-2 line-clamp-2 leading-relaxed mb-6 h-10 prose prose-sm prose-slate max-w-none overflow-hidden"
+          v-html="renderMarkdown(plan.description)"
+        ></div>
+
         <div class="pt-4 border-t border-[#F0F0F2] flex justify-between items-center text-[11px] text-[#9593A3]">
           <span class="flex items-center"><svg class="w-3.5 h-3.5 mr-1.5 text-[#D1D1D6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>{{ formatDate(plan.due_date) }}</span>
           <span :class="['px-2.5 py-1 rounded-md font-bold uppercase tracking-widest border text-[10px]', statusBgColor(plan.status)]">{{ formatStatus(plan.status) }}</span>
@@ -103,12 +109,10 @@
       </div>
     </div>
 
-    <!-- 3b. 看板模式 - 修复居中与截断问题 -->
+    <!-- 3b. 看板模式 -->
     <div v-else class="overflow-x-auto pb-8 px-8 -mx-8 scrollbar-hide animate-in slide-in-from-right-4 duration-300">
-      <!-- 内部包装容器：w-fit + mx-auto 实现完美居中 -->
       <div class="flex flex-row gap-6 w-fit mx-auto min-w-full lg:min-w-0 md:justify-center">
         <div v-for="col in kanbanColumns" :key="col.id" class="flex-shrink-0 w-80 lg:w-[350px] flex flex-col gap-4">
-          <!-- 列标题 -->
           <div class="flex items-center justify-between px-2">
             <div class="flex items-center gap-2">
               <span :class="['w-2.5 h-2.5 rounded-full', statusPointColor(col.id)]"></span>
@@ -117,7 +121,6 @@
             </div>
           </div>
 
-          <!-- 任务容器 (Draggable) -->
           <draggable 
             v-model="col.items" 
             group="plans" 
@@ -136,7 +139,14 @@
                   <span v-if="element.priority > 0" :class="['text-[9px] px-1.5 py-0.5 rounded font-black border', priorityClass(element.priority)]">P{{ element.priority }}</span>
                   <span class="text-[10px] font-medium text-[#9593A3] tracking-tight uppercase">{{ element.category || '未分类' }}</span>
                 </div>
-                <h4 class="text-[14px] font-bold text-[#1D1D20] leading-snug mb-3 group-hover:text-[#5E6AD2] transition-colors line-clamp-2 h-10">{{ element.title }}</h4>
+                <h4 class="text-[14px] font-bold text-[#1D1D20] leading-snug mb-2 group-hover:text-[#5E6AD2] transition-colors line-clamp-1">{{ element.title }}</h4>
+                
+                <!-- Markdown 渲染预览 (看板模式) -->
+                <div 
+                  class="text-[12px] text-[#67657F] leading-snug mb-3 line-clamp-2 prose prose-xs max-w-none overflow-hidden"
+                  v-html="renderMarkdown(element.description)"
+                ></div>
+
                 <div v-if="element.due_date" class="flex items-center text-[10px] text-[#9593A3] font-semibold">
                   <svg class="w-3.5 h-3.5 mr-1.5 text-[#D1D1D6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                   {{ formatDate(element.due_date) }}
@@ -145,7 +155,6 @@
             </template>
           </draggable>
         </div>
-        <!-- 最后的占位符，防止末列阴影截断 -->
         <div class="flex-shrink-0 w-6 h-full"></div>
       </div>
     </div>
@@ -155,6 +164,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, reactive } from 'vue';
 import draggable from 'vuedraggable';
+import { marked } from 'marked'; // 1. 引入 marked
 import api from '../api';
 import type { Plan } from '../types';
 
@@ -164,30 +174,38 @@ const plans = ref<Plan[]>([]);
 const loading = ref(true);
 const isLoggedIn = ref(!!localStorage.getItem('token'));
 
-// 状态管理
 const searchText = ref('');
 const activeStatus = ref('all');
 const viewMode = ref<'list' | 'kanban'>('list');
 
-// 看板列同步
 const kanbanColumns = reactive([
   { id: 'pending', label: '待办 (Backlog)', items: [] as Plan[] },
   { id: 'in_progress', label: '进行中 (Started)', items: [] as Plan[] },
   { id: 'completed', label: '已完成 (Done)', items: [] as Plan[] }
 ]);
 
+// 2. 配置 Marked (启用 GFM 和 换行符支持)
+marked.setOptions({
+  breaks: true,
+  gfm: true
+});
+
+const renderMarkdown = (content?: string) => {
+  if (!content) return '';
+  // 渲染 Markdown
+  return marked.parse(content);
+};
+
 const fetchPlans = async () => {
   loading.value = true;
   try {
     const params: any = {};
     if (searchText.value.trim()) params.q = searchText.value.trim();
-    // 列表模式应用后端筛选，看板模式获取全部由前端分发
     if (viewMode.value === 'list' && activeStatus.value !== 'all') params.status = activeStatus.value;
 
     const res = await api.get<Plan[]>('/plans', { params });
     plans.value = res.data;
 
-    // 分发看板数据
     kanbanColumns[0].items = plans.value.filter(p => p.status === 'pending');
     kanbanColumns[1].items = plans.value.filter(p => p.status === 'in_progress');
     kanbanColumns[2].items = plans.value.filter(p => p.status === 'completed');
@@ -202,10 +220,9 @@ const handleDragChange = async (event: any, newStatus: string) => {
   if (event.added) {
     const plan = event.added.element;
     try {
-      // 乐观更新：状态已在本地由 draggable 改变，发送 PATCH 即可
       await api.patch(`/plans/${plan.id}`, { status: newStatus });
     } catch (err) {
-      alert('同步状态失败，正在回滚...');
+      alert('同步失败');
       fetchPlans();
     }
   }
@@ -214,7 +231,6 @@ const handleDragChange = async (event: any, newStatus: string) => {
 const resetFilters = () => { searchText.value = ''; activeStatus.value = 'all'; fetchPlans(); };
 const setStatusFilter = (id: string) => { activeStatus.value = id; fetchPlans(); };
 
-// 视图切换或搜索防抖
 watch(viewMode, () => fetchPlans());
 let debounce: any = null;
 watch(searchText, () => {
@@ -223,12 +239,11 @@ watch(searchText, () => {
 });
 
 const deletePlan = async (id: number) => {
-  if (!confirm('确定永久删除此任务吗？')) return;
+  if (!confirm('确定删除吗？')) return;
   await api.delete(`/plans/${id}`);
   fetchPlans();
 };
 
-// 样式辅助函数
 const statusColor = (s: string) => s === 'completed' ? 'bg-emerald-500' : s === 'in_progress' ? 'bg-amber-500' : 'bg-gray-300';
 const statusBgColor = (s: string) => s === 'completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : s === 'in_progress' ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-gray-50 text-gray-500 border-gray-100';
 const statusPointColor = (s: string) => s === 'completed' ? 'bg-emerald-500' : s === 'in_progress' ? 'bg-amber-500' : 'bg-gray-400';
@@ -252,14 +267,32 @@ defineExpose({ fetchPlans });
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* 线条限制 */
 .line-clamp-1 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; overflow: hidden; }
 .line-clamp-2 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 
-/* 动画特效 */
 @keyframes slide-in-right { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 .slide-in-from-right-4 { animation: slide-in-right 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
 
-/* 拖拽视觉反馈 */
 .rotate-1 { transform: rotate(1.5deg); }
+
+/* --- Markdown 内容样式补丁 --- */
+:deep(.prose) {
+  color: inherit;
+  font-size: inherit;
+}
+:deep(.prose p) {
+  margin-bottom: 0.25rem;
+}
+:deep(.prose strong) {
+  font-weight: 700;
+  color: #1d1d20;
+}
+:deep(.prose ul) {
+  list-style-type: disc;
+  padding-left: 1rem;
+}
+:deep(.prose ol) {
+  list-style-type: decimal;
+  padding-left: 1rem;
+}
 </style>
