@@ -1,14 +1,11 @@
 // src/api.ts
 import axios from 'axios';
 
-// 创建 axios 实例
 const api = axios.create({
-  // 指向你的 Rust 后端地址
-  baseURL: 'http://127.0.0.1:3000/api', 
+  baseURL: 'http://127.0.0.1:3000/api',
   timeout: 5000,
 });
 
-// 请求拦截器：自动携带 Token
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -16,5 +13,29 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// 响应拦截器：处理统一报错
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response) {
+      const { status, data } = error.response;
+      
+      // 1. 如果 Token 过期
+      if (status === 401) {
+        localStorage.removeItem('token');
+        // 可以触发全局事件让页面跳转到登录或刷新
+        if (!window.location.pathname.includes('/login')) {
+           // window.location.reload(); 
+        }
+      }
+
+      // 2. 格式化错误信息供组件使用
+      // 即使是报错，我们也把后端返回的 message 抛出去
+      return Promise.reject(error);
+    }
+    return Promise.reject(new Error('网络连接异常'));
+  }
+);
 
 export default api;

@@ -38,7 +38,7 @@
       :isOpen="showPlanModal" 
       :editData="currentEditPlan" 
       @close="showPlanModal = false" 
-      @saved="refreshList" 
+      @saved="() => { refreshList(); showPlanModal = false; }" 
     />
   </div>
 </template>
