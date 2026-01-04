@@ -6,7 +6,7 @@
       <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-14 items-center">
           <div class="flex items-center">
-            <span class="text-xl font-bold text-[#5E6AD2] tracking-tight">LifePlan</span>
+            <p class="text-xl font-bold text-[#5E6AD2] tracking-tight">LifePlan</p>
           </div>
           <div class="flex items-center space-x-3">
             <div v-if="isLoggedIn" class="flex items-center gap-3">
@@ -19,7 +19,7 @@
               </button>
             </div>
             <button v-else @click="showLoginModal = true" class="text-sm font-medium text-[#5E6AD2] hover:text-[#525BC2]">
-              管理员登录
+              登录
             </button>
           </div>
         </div>

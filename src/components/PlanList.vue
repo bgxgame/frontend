@@ -4,8 +4,7 @@
     <!-- 标题区 -->
     <div class="flex justify-between items-center border-b border-[#E6E7E8] pb-4">
       <div>
-        <h2 class="text-xl font-semibold text-[#1D1D20]">我的计划</h2>
-        <p class="text-[#67657F] text-sm mt-1">记录生活，追踪进度</p>
+        <p class="text-[#67657F] text-sm mt-1">记录过程，复盘结果</p>
       </div>
       <span class="text-xs text-[#9593A3] bg-white px-2 py-1 rounded border border-[#E6E7E8]">
         共 {{ plans.length }} 项
