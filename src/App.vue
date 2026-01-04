@@ -1,22 +1,24 @@
 <!-- src/App.vue -->
 <template>
-  <div class="min-h-screen bg-slate-50 font-sans text-slate-800">
+  <div class="min-h-screen bg-[#FAFAFC] font-sans text-[#1D1D20]">
     <!-- 顶部导航 -->
-    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200">
+    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-[#E6E7E8]">
       <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
+        <div class="flex justify-between h-14 items-center">
           <div class="flex items-center">
-            <span class="text-2xl font-black text-indigo-600 tracking-tight">Life<span class="text-slate-800">Plan.</span></span>
+            <span class="text-xl font-bold text-[#5E6AD2] tracking-tight">LifePlan</span>
           </div>
-          <div class="flex items-center space-x-4">
-            <div v-if="isLoggedIn" class="flex items-center gap-4">
-              <span class="text-sm font-medium text-slate-600">Admin</span>
-              <button @click="openCreateModal" class="text-sm bg-indigo-600 text-white px-3 py-1.5 rounded-md hover:bg-indigo-700 transition">
+          <div class="flex items-center space-x-3">
+            <div v-if="isLoggedIn" class="flex items-center gap-3">
+              <span class="text-sm font-medium text-[#67657F]">Admin</span>
+              <button @click="openCreateModal" class="px-3 py-1.5 rounded-md font-medium transition-all duration-200 border border-transparent bg-[#5E6AD2] text-white hover:bg-[#525BC2]">
                 + 新建
               </button>
-              <button @click="logout" class="text-sm text-slate-400 hover:text-red-500 transition">退出</button>
+              <button @click="logout" class="text-sm text-[#67657F] hover:text-red-500 transition">
+                退出
+              </button>
             </div>
-            <button v-else @click="showLoginModal = true" class="text-sm font-medium text-indigo-600 hover:text-indigo-800">
+            <button v-else @click="showLoginModal = true" class="text-sm font-medium text-[#5E6AD2] hover:text-[#525BC2]">
               管理员登录
             </button>
           </div>
@@ -25,7 +27,7 @@
     </nav>
 
     <!-- 主内容 -->
-    <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <PlanList ref="planListRef" @edit="openEditModal" />
     </main>
 

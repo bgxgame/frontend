@@ -3,37 +3,52 @@
   <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
     <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" @click="$emit('close')"></div>
     
-    <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
-      <h2 class="text-xl font-bold mb-5 text-slate-800">
+    <div class="relative bg-white rounded-lg shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto border border-[#E6E7E8]">
+      <h2 class="text-lg font-semibold mb-4 text-[#1D1D20]">
         {{ isEditMode ? '编辑计划' : '新建计划' }}
       </h2>
 
       <form @submit.prevent="handleSubmit" class="space-y-4">
         <!-- 标题 -->
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">标题</label>
-          <input v-model="form.title" type="text" required class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+          <label class="block text-sm font-medium text-[#67657F] mb-1">标题</label>
+          <input 
+            v-model="form.title" 
+            type="text" 
+            required 
+            class="w-full px-3 py-2 border border-[#E6E7E8] rounded-md focus:ring-1 focus:ring-[#5E6AD2] focus:border-[#5E6AD2] outline-none transition" 
+          />
         </div>
 
         <!-- 描述 -->
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">描述</label>
-          <textarea v-model="form.description" rows="3" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+          <label class="block text-sm font-medium text-[#67657F] mb-1">描述</label>
+          <textarea 
+            v-model="form.description" 
+            rows="3" 
+            class="w-full px-3 py-2 border border-[#E6E7E8] rounded-md focus:ring-1 focus:ring-[#5E6AD2] focus:border-[#5E6AD2] outline-none transition"
+          ></textarea>
         </div>
 
         <!-- 分类与状态 -->
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">分类</label>
-            <select v-model="form.category" class="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none bg-white">
+            <label class="block text-sm font-medium text-[#67657F] mb-1">分类</label>
+            <select 
+              v-model="form.category" 
+              class="w-full px-3 py-2 border border-[#E6E7E8] rounded-md outline-none bg-white focus:ring-1 focus:ring-[#5E6AD2] focus:border-[#5E6AD2]"
+            >
               <option value="work">工作</option>
               <option value="life">生活</option>
               <option value="study">学习</option>
             </select>
           </div>
           <div v-if="isEditMode">
-            <label class="block text-sm font-medium text-slate-700 mb-1">状态</label>
-            <select v-model="form.status" class="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none bg-white">
+            <label class="block text-sm font-medium text-[#67657F] mb-1">状态</label>
+            <select 
+              v-model="form.status" 
+              class="w-full px-3 py-2 border border-[#E6E7E8] rounded-md outline-none bg-white focus:ring-1 focus:ring-[#5E6AD2] focus:border-[#5E6AD2]"
+            >
               <option value="pending">待办</option>
               <option value="in_progress">进行中</option>
               <option value="completed">已完成</option>
@@ -44,19 +59,37 @@
         <!-- 日期与可见性 -->
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">截止日期</label>
-            <input v-model="form.due_date" type="date" class="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none" />
+            <label class="block text-sm font-medium text-[#67657F] mb-1">截止日期</label>
+            <input 
+              v-model="form.due_date" 
+              type="date" 
+              class="w-full px-3 py-2 border border-[#E6E7E8] rounded-md outline-none focus:ring-1 focus:ring-[#5E6AD2] focus:border-[#5E6AD2]" 
+            />
           </div>
           <div class="flex items-center mt-6">
-            <input v-model="form.is_public" type="checkbox" id="public" class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500">
-            <label for="public" class="ml-2 text-sm text-slate-700">公开可见</label>
+            <input 
+              v-model="form.is_public" 
+              type="checkbox" 
+              id="public" 
+              class="w-4 h-4 text-[#5E6AD2] rounded border-[#E6E7E8] focus:ring-[#5E6AD2]"
+            >
+            <label for="public" class="ml-2 text-sm text-[#67657F]">公开可见</label>
           </div>
         </div>
 
         <!-- 按钮组 -->
-        <div class="flex justify-end gap-3 pt-4 border-t border-slate-50 mt-2">
-          <button type="button" @click="$emit('close')" class="px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition">取消</button>
-          <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-md transition">
+        <div class="flex justify-end gap-2 pt-4 border-t border-[#E6E7E8] mt-2">
+          <button 
+            type="button" 
+            @click="$emit('close')" 
+            class="px-3 py-1.5 rounded-md font-medium transition-all duration-200 border border-transparent bg-transparent border border-[#E6E7E8] text-[#67657F] hover:bg-white"
+          >
+            取消
+          </button>
+          <button 
+            type="submit" 
+            class="px-3 py-1.5 rounded-md font-medium transition-all duration-200 border border-transparent bg-[#5E6AD2] text-white hover:bg-[#525BC2]"
+          >
             {{ isEditMode ? '保存修改' : '立即创建' }}
           </button>
         </div>

@@ -5,38 +5,38 @@
     <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" @click="$emit('close')"></div>
     
     <!-- 内容框 -->
-    <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-sm p-8 overflow-hidden">
-      <h2 class="text-2xl font-bold text-center mb-6 text-slate-800">管理员登录</h2>
+    <div class="relative bg-white rounded-lg shadow-xl w-full max-w-sm p-6 overflow-hidden border border-[#E6E7E8]">
+      <h2 class="text-lg font-semibold text-center mb-4 text-[#1D1D20]">管理员登录</h2>
       
       <form @submit.prevent="handleLogin" class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">用户名</label>
+          <label class="block text-sm font-medium text-[#67657F] mb-1">用户名</label>
           <input 
             v-model="form.username" 
             type="text" 
-            class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+            class="w-full px-3 py-2 border border-[#E6E7E8] rounded-md focus:ring-1 focus:ring-[#5E6AD2] focus:border-[#5E6AD2] outline-none transition"
             required
           />
         </div>
         
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">密码</label>
+          <label class="block text-sm font-medium text-[#67657F] mb-1">密码</label>
           <input 
             v-model="form.password" 
             type="password" 
-            class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+            class="w-full px-3 py-2 border border-[#E6E7E8] rounded-md focus:ring-1 focus:ring-[#5E6AD2] focus:border-[#5E6AD2] outline-none transition"
             required
           />
         </div>
 
-        <div v-if="errorMsg" class="text-red-500 text-sm text-center bg-red-50 p-2 rounded">
+        <div v-if="errorMsg" class="text-xs text-red-500 text-center bg-red-50 p-2 rounded">
           {{ errorMsg }}
         </div>
 
         <button 
           type="submit" 
           :disabled="loading"
-          class="w-full bg-indigo-600 text-white py-2.5 rounded-lg font-medium hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          class="w-full px-3 py-1.5 rounded-md font-medium transition-all duration-200 border border-transparent bg-[#5E6AD2] text-white hover:bg-[#525BC2]"
         >
           {{ loading ? '登录中...' : '立即登录' }}
         </button>
