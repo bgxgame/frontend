@@ -1,96 +1,132 @@
 <!-- src/components/PlanModal.vue -->
 <template>
   <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" @click="$emit('close')"></div>
+    <!-- 背景遮罩 -->
+    <div 
+      class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" 
+      @click="handleClose"
+    ></div>
     
-    <div class="relative bg-white rounded-lg shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto border border-[#E6E7E8]">
-      <h2 class="text-lg font-semibold mb-4 text-[#1D1D20]">
-        {{ isEditMode ? '编辑计划' : '新建计划' }}
-      </h2>
+    <!-- 弹窗主体 -->
+    <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden border border-[#E6E7E8] flex flex-col max-h-[95vh]">
+      <!-- 头部 -->
+      <div class="px-6 py-4 border-b border-[#E6E7E8] flex justify-between items-center bg-[#FAFAFC]">
+        <h2 class="text-[16px] font-semibold text-[#1D1D20]">
+          {{ isEditMode ? '编辑计划' : '新建计划' }}
+        </h2>
+        <button @click="handleClose" class="text-[#9593A3] hover:text-[#1D1D20] transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
 
-      <form @submit.prevent="handleSubmit" class="space-y-4">
+      <!-- 表单内容 -->
+      <form @submit.prevent="handleSubmit" class="p-6 space-y-5 overflow-y-auto">
         <!-- 标题 -->
         <div>
-          <label class="block text-sm font-medium text-[#67657F] mb-1">标题</label>
+          <label class="block text-xs font-bold text-[#67657F] uppercase tracking-wider mb-1.5">标题</label>
           <input 
             v-model="form.title" 
             type="text" 
+            placeholder="做什么？"
             required 
-            class="w-full px-3 py-2 border border-[#E6E7E8] rounded-md focus:ring-1 focus:ring-[#5E6AD2] focus:border-[#5E6AD2] outline-none transition" 
+            class="w-full px-3 py-2 bg-white border border-[#E6E7E8] rounded-md focus:ring-1 focus:ring-[#5E6AD2] focus:border-[#5E6AD2] outline-none transition-all placeholder:text-gray-300" 
           />
         </div>
 
         <!-- 描述 -->
         <div>
-          <label class="block text-sm font-medium text-[#67657F] mb-1">描述</label>
+          <label class="block text-xs font-bold text-[#67657F] uppercase tracking-wider mb-1.5">详细描述</label>
           <textarea 
             v-model="form.description" 
             rows="3" 
-            class="w-full px-3 py-2 border border-[#E6E7E8] rounded-md focus:ring-1 focus:ring-[#5E6AD2] focus:border-[#5E6AD2] outline-none transition"
+            placeholder="添加一些说明..."
+            class="w-full px-3 py-2 bg-white border border-[#E6E7E8] rounded-md focus:ring-1 focus:ring-[#5E6AD2] focus:border-[#5E6AD2] outline-none transition-all resize-none placeholder:text-gray-300"
           ></textarea>
         </div>
 
-        <!-- 分类与状态 -->
+        <!-- 第一行：分类与状态 -->
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-[#67657F] mb-1">分类</label>
+            <label class="block text-xs font-bold text-[#67657F] uppercase tracking-wider mb-1.5">分类</label>
             <select 
               v-model="form.category" 
-              class="w-full px-3 py-2 border border-[#E6E7E8] rounded-md outline-none bg-white focus:ring-1 focus:ring-[#5E6AD2] focus:border-[#5E6AD2]"
+              class="w-full px-3 py-2 bg-white border border-[#E6E7E8] rounded-md outline-none focus:ring-1 focus:ring-[#5E6AD2] focus:border-[#5E6AD2] cursor-pointer"
             >
-              <option value="work">工作</option>
-              <option value="life">生活</option>
-              <option value="study">学习</option>
+              <option value="work">工作 (Work)</option>
+              <option value="life">生活 (Life)</option>
+              <option value="study">学习 (Study)</option>
             </select>
           </div>
-          <div v-if="isEditMode">
-            <label class="block text-sm font-medium text-[#67657F] mb-1">状态</label>
+          <div>
+            <label class="block text-xs font-bold text-[#67657F] uppercase tracking-wider mb-1.5">状态</label>
             <select 
               v-model="form.status" 
-              class="w-full px-3 py-2 border border-[#E6E7E8] rounded-md outline-none bg-white focus:ring-1 focus:ring-[#5E6AD2] focus:border-[#5E6AD2]"
+              :disabled="!isEditMode"
+              class="w-full px-3 py-2 bg-white border border-[#E6E7E8] rounded-md outline-none focus:ring-1 focus:ring-[#5E6AD2] focus:border-[#5E6AD2] disabled:bg-gray-50 disabled:text-gray-400 cursor-pointer"
             >
-              <option value="pending">待办</option>
-              <option value="in_progress">进行中</option>
-              <option value="completed">已完成</option>
+              <option value="pending">待办 (Backlog)</option>
+              <option value="in_progress">进行中 (In Progress)</option>
+              <option value="completed">已完成 (Done)</option>
             </select>
           </div>
         </div>
 
-        <!-- 日期与可见性 -->
+        <!-- 第二行：优先级与截止日期 -->
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-[#67657F] mb-1">截止日期</label>
+            <label class="block text-xs font-bold text-[#67657F] uppercase tracking-wider mb-1.5">优先级</label>
+            <select 
+              v-model.number="form.priority" 
+              class="w-full px-3 py-2 bg-white border border-[#E6E7E8] rounded-md outline-none focus:ring-1 focus:ring-[#5E6AD2] focus:border-[#5E6AD2] cursor-pointer"
+            >
+              <option :value="0">无优先级</option>
+              <option :value="1">低 (P1 - Low)</option>
+              <option :value="2">中 (P2 - Medium)</option>
+              <option :value="3">高 (P3 - High)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[#67657F] uppercase tracking-wider mb-1.5">截止日期</label>
             <input 
               v-model="form.due_date" 
               type="date" 
-              class="w-full px-3 py-2 border border-[#E6E7E8] rounded-md outline-none focus:ring-1 focus:ring-[#5E6AD2] focus:border-[#5E6AD2]" 
+              class="w-full px-3 py-2 bg-white border border-[#E6E7E8] rounded-md outline-none focus:ring-1 focus:ring-[#5E6AD2] focus:border-[#5E6AD2] cursor-pointer" 
             />
-          </div>
-          <div class="flex items-center mt-6">
-            <input 
-              v-model="form.is_public" 
-              type="checkbox" 
-              id="public" 
-              class="w-4 h-4 text-[#5E6AD2] rounded border-[#E6E7E8] focus:ring-[#5E6AD2]"
-            >
-            <label for="public" class="ml-2 text-sm text-[#67657F]">公开可见</label>
           </div>
         </div>
 
-        <!-- 按钮组 -->
-        <div class="flex justify-end gap-2 pt-4 border-t border-[#E6E7E8] mt-2">
+        <!-- 选项：可见性 -->
+        <div class="pt-2">
+          <label class="flex items-center cursor-pointer group">
+            <div class="relative">
+              <input 
+                v-model="form.is_public" 
+                type="checkbox" 
+                class="sr-only"
+              >
+              <div :class="['w-10 h-5 rounded-full transition-colors', form.is_public ? 'bg-[#5E6AD2]' : 'bg-gray-200']"></div>
+              <div :class="['absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition-transform', form.is_public ? 'translate-x-5' : '']"></div>
+            </div>
+            <span class="ml-3 text-sm text-[#67657F] group-hover:text-[#1D1D20] transition-colors">
+              公开此计划 (所有人可见)
+            </span>
+          </label>
+        </div>
+
+        <!-- 底部按钮 -->
+        <div class="flex justify-end gap-3 pt-4 border-t border-[#E6E7E8] mt-6">
           <button 
             type="button" 
-            @click="$emit('close')" 
-            class="px-3 py-1.5 rounded-md font-medium transition-all duration-200 border border-transparent bg-transparent border border-[#E6E7E8] text-[#67657F] hover:bg-white"
+            @click="handleClose" 
+            class="px-4 py-2 text-sm font-medium text-[#67657F] bg-white border border-[#E6E7E8] rounded-md hover:bg-gray-50 transition-all"
           >
             取消
           </button>
           <button 
             type="submit" 
-            class="px-3 py-1.5 rounded-md font-medium transition-all duration-200 border border-transparent bg-[#5E6AD2] text-white hover:bg-[#525BC2]"
+            class="px-4 py-2 text-sm font-medium text-white bg-[#5E6AD2] rounded-md hover:bg-[#525BC2] shadow-sm shadow-blue-200 transition-all flex items-center gap-2"
           >
-            {{ isEditMode ? '保存修改' : '立即创建' }}
+            <span>{{ isEditMode ? '保存更改' : '创建计划' }}</span>
           </button>
         </div>
       </form>
@@ -105,62 +141,85 @@ import type { Plan } from '../types';
 
 const props = defineProps<{
   isOpen: boolean;
-  editData?: Plan | null; // 如果有值，就是编辑模式
+  editData?: Plan | null;
 }>();
 
 const emit = defineEmits(['close', 'saved']);
 
-// 初始表单数据
-const initialForm = {
+// 初始表单状态
+const getInitialForm = () => ({
   title: '',
   description: '',
-  category: 'life',
+  category: 'work',
   status: 'pending',
+  priority: 0,
   due_date: '',
   is_public: true,
-};
+});
 
-const form = ref({ ...initialForm });
+const form = ref(getInitialForm());
 
-// 判断是否是编辑模式
 const isEditMode = computed(() => !!props.editData);
 
-// 当打开窗口或 editData 变化时，重置表单
+// 监听编辑数据的变化，填充表单
 watch(() => props.editData, (newVal) => {
   if (newVal) {
-    // 编辑模式：填充数据
     form.value = {
       ...newVal,
-      // 格式化日期以适配 input type="date"
+      // 这里的处理是为了适配 HTML5 date input 的格式 (YYYY-MM-DD)
       due_date: newVal.due_date ? newVal.due_date.split('T')[0] : '',
+      description: newVal.description || '',
     };
   } else {
-    // 新建模式：清空
-    form.value = { ...initialForm };
+    form.value = getInitialForm();
   }
 }, { immediate: true });
 
+const handleClose = () => {
+  form.value = getInitialForm();
+  emit('close');
+};
+
 const handleSubmit = async () => {
+  if (!form.value.title.trim()) return;
+
   try {
-    // 构造发送给后端的数据 (处理日期格式)
+    // 构造发送给后端的数据
     const payload = {
       ...form.value,
+      // 如果日期不为空，转换为 ISO 字符串 (2025-12-30T00:00:00.000Z)
       due_date: form.value.due_date ? new Date(form.value.due_date).toISOString() : null,
+      priority: Number(form.value.priority) // 确保是数字
     };
 
     if (isEditMode.value && props.editData) {
-      // 编辑：PATCH
+      // 执行更新 (PATCH)
       await api.patch(`/plans/${props.editData.id}`, payload);
     } else {
-      // 新建：POST
+      // 执行新建 (POST)
       await api.post('/plans', payload);
     }
     
-    emit('saved'); // 通知父组件刷新列表
-    emit('close');
-  } catch (err) {
-    alert('操作失败');
-    console.error(err);
+    emit('saved'); 
+    handleClose();
+  } catch (err: any) {
+    console.error('提交失败:', err);
+    alert(err.response?.data?.message || '操作失败，请重试');
   }
 };
 </script>
+
+<style scoped>
+/* 隐藏原生 Checkbox 但保留辅助功能 */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+</style>
