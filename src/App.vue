@@ -3,7 +3,7 @@
   <div class="min-h-screen bg-[#FAFAFC] font-sans text-[#1D1D20]">
     <!-- 顶部导航 -->
     <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-[#E6E7E8]">
-      <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-14 items-center">
           <div class="flex items-center">
             <p class="text-xl font-bold text-[#5E6AD2] tracking-tight">LifePlan</p>
@@ -27,7 +27,7 @@
     </nav>
 
     <!-- 主内容 -->
-    <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <PlanList ref="planListRef" @edit="openEditModal" />
     </main>
 
