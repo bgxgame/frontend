@@ -1,5 +1,80 @@
-# Vue 3 + TypeScript + Vite
+好的，让我为您总结一下这个项目，以初学者友好的方式由浅入深地介绍：
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+## 项目概述
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+这是一个基于Vue 3 + TypeScript + Vite构建的前端项目，主要功能是个人计划管理系统。项目采用了Tailwind CSS作为样式框架，UI设计参考了Linear应用的风格，具有现代、简洁的界面。
+
+## 技术栈
+
+- **前端框架**: Vue 3 (使用Composition API)
+- **编程语言**: TypeScript
+- **构建工具**: Vite
+- **样式框架**: Tailwind CSS
+- **HTTP客户端**: Axios (用于API请求)
+- **日期处理**: date-fns
+
+## 项目结构
+
+```
+src/
+├── components/          # 可复用的Vue组件
+│   ├── LoginModal.vue  # 登录模态框
+│   ├── PlanList.vue    # 计划列表组件
+│   └── PlanModal.vue   # 计划编辑/创建模态框
+├── App.vue             # 主应用组件
+├── api.ts              # API请求封装
+├── main.ts             # 应用入口文件
+├── style.css           # 全局样式（Tailwind相关）
+└── types.ts            # TypeScript类型定义
+```
+
+## 主要功能
+
+1. **用户认证**：
+   - 管理员登录功能
+   - 基于Token的身份验证
+
+2. **计划管理**：
+   - 查看计划列表
+   - 创建新计划
+   - 编辑现有计划
+   - 删除计划
+   - 计划状态管理（待办、进行中、完成）
+
+3. **数据展示**：
+   - 按分类显示计划
+   - 显示截止日期
+   - 状态标签显示
+   - 公开/私有计划区分
+
+## UI设计特色
+
+项目采用Linear风格的UI设计，具有以下特点：
+
+1. **极简主义**：大量使用留白，界面清爽
+2. **柔和配色**：使用柔和的蓝色作为主色调
+3. **精致细节**：精细的边框、阴影和过渡效果
+4. **现代交互**：悬停效果、平滑过渡等
+
+## 代码特点
+
+1. **组件化设计**：功能模块化，易于维护
+2. **TypeScript支持**：类型安全，减少运行时错误
+3. **响应式设计**：适配不同屏幕尺寸
+4. **状态管理**：合理使用Vue的响应式系统
+
+## Tailwind CSS使用
+
+项目充分利用了Tailwind CSS的实用性优先的CSS框架特性：
+
+- 通过`@tailwind`指令引入基础样式
+- 使用`@apply`组合常用样式类
+- 自定义Linear风格的颜色主题
+
+## 开发配置
+
+- **开发服务器**: `npm run dev`
+- **构建生产版本**: `npm run build`
+- **预览生产版本**: `npm run preview`
+
+这个项目展示了现代前端开发的最佳实践，包括组件化、类型安全、响应式设计等，同时通过参考Linear的UI风格实现了美观的用户界面。
