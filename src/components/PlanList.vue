@@ -4,7 +4,7 @@
     <!-- 1. 标题区 -->
     <div class="flex justify-between items-center border-b border-[#E6E7E8] pb-4">
       <div>
-        <h2 class="text-xl font-bold text-[#1D1D20] tracking-tight">我的计划</h2>
+        <!-- <h2 class="text-xl font-bold text-[#1D1D20] tracking-tight">我的计划</h2> -->
         <p class="text-[#67657F] text-sm mt-1">记录过程，复盘结果</p>
       </div>
       <div class="flex flex-col items-end gap-1">
