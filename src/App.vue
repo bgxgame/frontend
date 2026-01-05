@@ -1,105 +1,178 @@
 <!-- src/App.vue -->
 <template>
-  <div class="min-h-screen bg-[#FAFAFC] font-sans text-[#1D1D20]">
-    <!-- 顶部导航 -->
-    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-[#E6E7E8]">
-      <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-14 items-center">
-          <div class="flex items-center">
-            <p class="text-xl font-bold text-[#5E6AD2] tracking-tight">LifePlan</p>
+  <div class="antialiased text-[#1D1D20] font-sans">
+    <!-- 1. 未登录状态 -->
+    <div v-if="!isLoggedIn" class="min-h-screen bg-[#FAFAFC] flex items-center justify-center p-4">
+      <AuthPage @login-success="handleLoginSuccess" />
+    </div>
+
+    <!-- 2. 已登录状态 -->
+    <div v-else class="flex h-screen w-full bg-white overflow-hidden">
+      
+      <Sidebar 
+        :username="username" 
+        :activeTab="activeTab"
+        @logout="logout"
+        @openCreate="openCreateModal"
+        @changeTab="handleTabChange"
+      />
+
+      <div class="flex-1 flex flex-col min-w-0 bg-white">
+        <!-- 顶部状态栏：删除了右侧快捷键提示 -->
+        <header class="h-12 border-b border-[#F0F0F2] flex items-center px-6 shrink-0">
+          <div class="flex items-center gap-2 text-[13px]">
+            <span class="text-[#9593A3] font-medium">Workspace</span>
+            <span class="text-[#D1D1D6]">/</span>
+            <span class="font-semibold text-[#1D1D20] capitalize">{{ activeTab }}</span>
           </div>
-          <div class="flex items-center space-x-3">
-            <div v-if="isLoggedIn" class="flex items-center gap-3">
-              <span class="text-sm font-medium text-[#67657F]">Admin</span>
-              <button @click="openCreateModal" class="px-3 py-1.5 rounded-md font-medium transition-all duration-200 border border-transparent bg-[#5E6AD2] text-white hover:bg-[#525BC2]">
-                + 新建
-              </button>
-              <button @click="logout" class="text-sm text-[#67657F] hover:text-red-500 transition">
-                退出
-              </button>
+        </header>
+
+        <main class="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar bg-white">
+          <div class="max-w-[1400px] mx-auto p-8">
+            <div v-if="activeTab === 'issues'">
+              <PlanList ref="planListRef" @edit="openEditModal" />
             </div>
-            <button v-else @click="showLoginModal = true" class="text-sm font-medium text-[#5E6AD2] hover:text-[#525BC2]">
-              登录
-            </button>
+
+            <div v-else class="flex flex-col items-center justify-center py-40 animate-in fade-in slide-in-from-bottom-4">
+              <div class="w-16 h-16 bg-[#FAFAFC] rounded-2xl flex items-center justify-center mb-4 border border-[#F0F0F2]">
+                <svg class="w-8 h-8 text-[#D1D1D6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              </div>
+              <h2 class="text-lg font-bold text-[#1D1D20]">{{ activeTab.toUpperCase() }} 视图建设中</h2>
+              <button @click="activeTab = 'issues'" class="mt-6 text-sm font-bold text-[#5E6AD2] hover:underline">返回我的计划</button>
+            </div>
           </div>
-        </div>
+        </main>
       </div>
-    </nav>
 
-    <!-- 主内容 -->
-    <main class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <PlanList ref="planListRef" @edit="openEditModal" />
-    </main>
+      <!-- 搜索面板：仅通过快捷键唤起 -->
+      <SearchPalette 
+        :isOpen="showSearch" 
+        :plans="allPlansForSearch"
+        @close="showSearch = false"
+        @select="handleSearchSelect"
+      />
 
-    <ToastContainer />
-    <!-- 模态框 -->
-    <LoginModal :isOpen="showLoginModal" @close="showLoginModal = false" @login-success="handleLoginSuccess" />
-    
-    <!-- 修复点：绑定统一的 closePlanModal 函数 -->
-    <PlanModal 
-      :isOpen="showPlanModal" 
-      :editData="currentEditPlan" 
-      @close="closePlanModal" 
-      @saved="handleSaved" 
-    />
+      <PlanModal 
+        :isOpen="showPlanModal" 
+        :editData="currentEditPlan" 
+        @close="closePlanModal" 
+        @saved="handlePlanSaved" 
+      />
+      
+      <ToastContainer />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
+import Sidebar from './components/Sidebar.vue';
+import AuthPage from './components/AuthPage.vue';
 import PlanList from './components/PlanList.vue';
-import LoginModal from './components/LoginModal.vue';
 import PlanModal from './components/PlanModal.vue';
+import SearchPalette from './components/SearchPalette.vue';
 import ToastContainer from './components/ToastContainer.vue';
+import api from './api';
 import type { Plan } from './types';
 
 const isLoggedIn = ref(!!localStorage.getItem('token'));
-const showLoginModal = ref(false);
+const username = ref(localStorage.getItem('username') || '');
+const activeTab = ref('issues');
+
+// 快捷键双击判断
+let lastTabPressTime = 0;
+
 const showPlanModal = ref(false);
+const showSearch = ref(false);
 const currentEditPlan = ref<Plan | null>(null);
-const planListRef = ref(); 
+const allPlansForSearch = ref<Plan[]>([]);
+const planListRef = ref();
 
 const handleLoginSuccess = () => {
   isLoggedIn.value = true;
-  refreshList();
+  username.value = localStorage.getItem('username') || 'Admin';
 };
 
 const logout = () => {
   localStorage.removeItem('token');
   localStorage.removeItem('username');
   isLoggedIn.value = false;
-  location.reload();
 };
 
-// --- 弹窗控制逻辑 ---
+const handleTabChange = (tab: string) => { activeTab.value = tab; };
 
 const openCreateModal = () => {
-  currentEditPlan.value = null; // 确保清空
+  currentEditPlan.value = null; 
   showPlanModal.value = true;
 };
 
 const openEditModal = (plan: Plan) => {
-  currentEditPlan.value = plan; // 设置待编辑数据
+  currentEditPlan.value = plan;
   showPlanModal.value = true;
 };
 
-// 核心修复函数：负责彻底清理状态
 const closePlanModal = () => {
   showPlanModal.value = false;
-  // 延迟清空数据，避免弹窗关闭动画中内容突然跳变
-  setTimeout(() => {
-    currentEditPlan.value = null;
-  }, 200);
+  setTimeout(() => { currentEditPlan.value = null; }, 200);
 };
 
-const handleSaved = () => {
-  refreshList();
-  closePlanModal(); // 保存后彻底关闭并清理
+const handlePlanSaved = () => {
+  if (planListRef.value) planListRef.value.fetchPlans();
+  closePlanModal();
 };
 
-const refreshList = () => {
-  if (planListRef.value) {
-    planListRef.value.fetchPlans();
+const fetchAllPlansForSearch = async () => {
+  if (!isLoggedIn.value) return;
+  try {
+    const res = await api.get<Plan[]>('/plans');
+    allPlansForSearch.value = res.data;
+  } catch (err) { console.error("加载搜索数据失败"); }
+};
+
+const handleSearchSelect = (plan: Plan) => { openEditModal(plan); };
+
+// 快捷键逻辑：按两下 Tab 唤起
+const handleKeyDown = (e: KeyboardEvent) => {
+  if (e.key === 'Tab') {
+    const currentTime = Date.now();
+    const timeDiff = currentTime - lastTabPressTime;
+
+    if (timeDiff > 0 && timeDiff < 300) {
+      e.preventDefault();
+      showSearch.value = !showSearch.value;
+      lastTabPressTime = 0;
+    } else {
+      lastTabPressTime = currentTime;
+    }
+  }
+  // 备选 Ctrl+K
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault();
+    showSearch.value = !showSearch.value;
   }
 };
+
+watch(showSearch, (open) => { if (open) fetchAllPlansForSearch(); });
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyDown);
+  if (isLoggedIn.value) username.value = localStorage.getItem('username') || 'Admin';
+});
+
+onUnmounted(() => { window.removeEventListener('keydown', handleKeyDown); });
 </script>
+
+<style>
+body { margin: 0; overflow: hidden; }
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background-color: #E6E7E8; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+
+.animate-in { animation-duration: 0.3s; animation-fill-mode: both; }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.fade-in { animation-name: fade-in; }
+@keyframes slide-in-bottom { from { transform: translateY(10px); } to { transform: translateY(0); } }
+.slide-in-from-bottom-4 { animation-name: slide-in-bottom; }
+</style>

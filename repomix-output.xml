@@ -49,11 +49,16 @@ README.md
 src/api.ts
 src/App.vue
 src/assets/vue.svg
-src/components/LoginModal.vue
+src/components/AuthPage.vue
+src/components/ConfirmModal.vue
 src/components/PlanList.vue
 src/components/PlanModal.vue
+src/components/SearchPalette.vue
+src/components/Sidebar.vue
+src/components/ToastContainer.vue
 src/main.ts
 src/style.css
+src/toast.ts
 src/types.ts
 tailwind.config.js
 tsconfig.app.json
@@ -64,6 +69,276 @@ vite.config.ts
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="src/components/AuthPage.vue">
+<!-- src/components/AuthPage.vue -->
+<template>
+  <div class="w-full max-w-[360px] animate-in fade-in zoom-in duration-500">
+    <!-- Logo 区域 -->
+    <div class="flex justify-center mb-8">
+      <div class="w-10 h-10 bg-[#5E6AD2] rounded-lg flex items-center justify-center shadow-lg shadow-indigo-100">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+      </div>
+    </div>
+
+    <div class="text-center mb-8">
+      <h1 class="text-xl font-bold text-[#1D1D20] tracking-tight">
+        {{ isLogin ? '登录到 LifePlan' : '创建新账号' }}
+      </h1>
+      <p class="text-[#67657F] text-sm mt-1.5 font-medium">
+        {{ isLogin ? '继续管理你的高效生活' : '开始记录你的成长过程' }}
+      </p>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl border border-[#E6E7E8] shadow-sm">
+      <form @submit.prevent="handleSubmit" class="space-y-4">
+        <div>
+          <label class="block text-[10px] font-bold text-[#9593A3] uppercase tracking-widest mb-1.5 ml-1">Username</label>
+          <input 
+            v-model="form.username" 
+            type="text" 
+            required
+            class="w-full px-3 py-2 text-sm bg-[#FAFAFC] border border-[#E6E7E8] rounded-md focus:ring-4 focus:ring-[#5E6AD2]/10 focus:border-[#5E6AD2] outline-none transition-all"
+            placeholder="用户名"
+          />
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-bold text-[#9593A3] uppercase tracking-widest mb-1.5 ml-1">Password</label>
+          <input 
+            v-model="form.password" 
+            type="password" 
+            required
+            class="w-full px-3 py-2 text-sm bg-[#FAFAFC] border border-[#E6E7E8] rounded-md focus:ring-4 focus:ring-[#5E6AD2]/10 focus:border-[#5E6AD2] outline-none transition-all"
+            placeholder="••••••••"
+          />
+        </div>
+
+        <button 
+          type="submit" 
+          :disabled="loading"
+          class="w-full py-2 bg-[#5E6AD2] text-white rounded-md text-sm font-bold hover:bg-[#525BC2] active:scale-[0.98] transition-all disabled:opacity-50 shadow-md shadow-indigo-100 mt-2"
+        >
+          <span v-if="loading" class="inline-block w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></span>
+          {{ isLogin ? '立即登录' : '注册账号' }}
+        </button>
+      </form>
+
+      <div class="mt-6 pt-4 border-t border-[#F0F0F2] text-center">
+        <button @click="isLogin = !isLogin" class="text-[13px] text-[#5E6AD2] font-semibold hover:underline">
+          {{ isLogin ? '还没有账号？去注册' : '已有账号？返回登录' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, reactive } from 'vue';
+import api from '../api';
+import { toastStore } from '../toast';
+
+const emit = defineEmits(['login-success']);
+
+const isLogin = ref(true);
+const loading = ref(false);
+const form = reactive({ username: '', password: '' });
+
+const handleSubmit = async () => {
+  loading.value = true;
+  const endpoint = isLogin.value ? '/login' : '/register';
+  try {
+    const res = await api.post(endpoint, form);
+    if (isLogin.value) {
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('username', res.data.username);
+      toastStore.show(`欢迎回来, ${res.data.username}`);
+      emit('login-success');
+    } else {
+      toastStore.show('注册成功，请登录');
+      isLogin.value = true;
+      form.password = '';
+    }
+  } catch (err: any) {
+    // 错误由 api.ts 拦截并 Toast
+  } finally {
+    loading.value = false;
+  }
+};
+</script>
+</file>
+
+<file path="src/components/SearchPalette.vue">
+<!-- src/components/SearchPalette.vue -->
+<template>
+  <div v-if="isOpen" class="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] px-4">
+    <!-- 遮罩层 -->
+    <div class="absolute inset-0 bg-slate-900/20 backdrop-blur-[2px]" @click="$emit('close')"></div>
+
+    <!-- 面板主体 -->
+    <div class="relative bg-white w-full max-w-xl rounded-xl shadow-2xl border border-[#E6E7E8] overflow-hidden animate-in fade-in zoom-in duration-200">
+      <!-- 输入框区域 -->
+      <div class="flex items-center px-4 border-b border-[#F0F0F2]">
+        <svg class="w-5 h-5 text-[#9593A3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input 
+          ref="inputRef"
+          v-model="query"
+          type="text" 
+          placeholder="搜索计划或输入指令..."
+          class="w-full px-3 py-4 text-[15px] outline-none placeholder:text-[#D1D1D6]"
+          @keydown.esc="$emit('close')"
+        />
+        <div class="px-1.5 py-0.5 border border-[#E6E7E8] rounded text-[10px] font-bold text-[#9593A3] bg-[#FAFAFC]">ESC</div>
+      </div>
+
+      <!-- 搜索结果列表 -->
+      <div class="max-h-[60vh] overflow-y-auto p-2">
+        <div v-if="filteredPlans.length > 0">
+          <div 
+            v-for="plan in filteredPlans" 
+            :key="plan.id"
+            @click="handleSelect(plan)"
+            class="flex items-center gap-3 px-3 py-2.5 hover:bg-[#F0F1F2] rounded-lg cursor-pointer group transition-colors"
+          >
+            <div :class="['w-2 h-2 rounded-full', statusColor(plan.status)]"></div>
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-medium text-[#1D1D20] truncate">{{ plan.title }}</div>
+              <div class="text-[11px] text-[#9593A3] mt-0.5 uppercase tracking-tight">{{ plan.category }}</div>
+            </div>
+            <div class="text-[10px] text-[#D1D1D6] opacity-0 group-hover:opacity-100 transition-opacity">跳转至</div>
+          </div>
+        </div>
+        
+        <!-- 空状态 -->
+        <div v-else-if="query" class="py-12 text-center">
+          <p class="text-sm text-[#9593A3]">未找到相关计划</p>
+        </div>
+        <div v-else class="py-4 px-3">
+          <span class="text-[11px] font-bold text-[#9593A3] uppercase tracking-widest">最近建议</span>
+          <div class="mt-2 text-sm text-[#67657F]">输入关键词开始搜索...</div>
+        </div>
+      </div>
+
+      <!-- 底部提示 -->
+      <div class="px-4 py-2 bg-[#FAFAFC] border-t border-[#F0F0F2] flex items-center gap-4 text-[11px] text-[#9593A3]">
+        <span class="flex items-center gap-1"><span class="font-bold text-[#67657F]">↑↓</span> 选择</span>
+        <span class="flex items-center gap-1"><span class="font-bold text-[#67657F]">Enter</span> 确认</span>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, watch, nextTick } from 'vue';
+import type { Plan } from '../types';
+
+const props = defineProps<{
+  isOpen: boolean;
+  plans: Plan[];
+}>();
+
+const emit = defineEmits(['close', 'select']);
+
+const query = ref('');
+const inputRef = ref<HTMLInputElement | null>(null);
+
+// 过滤逻辑
+const filteredPlans = computed(() => {
+  if (!query.value) return [];
+  return props.plans.filter(p => 
+    p.title.toLowerCase().includes(query.value.toLowerCase())
+  ).slice(0, 8); // 最多显示8条
+});
+
+// 自动聚焦
+watch(() => props.isOpen, (newVal) => {
+  if (newVal) {
+    query.value = '';
+    nextTick(() => inputRef.value?.focus());
+  }
+});
+
+const handleSelect = (plan: Plan) => {
+  emit('select', plan);
+  emit('close');
+};
+
+const statusColor = (s: string) => s === 'completed' ? 'bg-emerald-500' : s === 'in_progress' ? 'bg-amber-500' : 'bg-gray-300';
+</script>
+</file>
+
+<file path="src/components/Sidebar.vue">
+<!-- src/components/Sidebar.vue (精简版) -->
+<template>
+  <aside class="w-60 h-screen bg-[#FAFAFC] border-r border-[#E6E7E8] flex flex-col shrink-0 select-none">
+    <!-- 1. 用户区域 -->
+    <div class="p-3 mb-2">
+      <div class="flex items-center gap-2 px-2 py-1.5 hover:bg-[#F0F1F2] rounded-md cursor-pointer transition-colors group">
+        <div class="w-5 h-5 bg-[#5E6AD2] rounded text-[10px] font-bold text-white flex items-center justify-center shrink-0 shadow-sm shadow-indigo-200">
+          {{ username ? username.charAt(0).toUpperCase() : 'U' }}
+        </div>
+        <span class="text-sm font-semibold text-[#1D1D20] truncate flex-1">{{ username || 'User' }}</span>
+        <svg class="w-3.5 h-3.5 text-[#9593A3] group-hover:text-[#1D1D20] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+        </svg>
+      </div>
+    </div>
+
+    <!-- 2. 导航菜单：删除了 Search 选项 -->
+    <nav class="flex-1 px-3 space-y-0.5">
+      <!-- My Issues -->
+      <div 
+        @click="$emit('changeTab', 'issues')"
+        class="flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-medium rounded-md cursor-pointer transition-all"
+        :class="activeTab === 'issues' ? 'bg-[#EBECEF] text-[#1D1D20]' : 'text-[#67657F] hover:bg-[#F0F1F2] hover:text-[#1D1D20]'"
+      >
+        <svg class="w-4 h-4" :class="activeTab === 'issues' ? 'text-[#5E6AD2]' : 'text-[#67657F]'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        My Issues
+      </div>
+
+      <!-- Projects -->
+      <div 
+        @click="$emit('changeTab', 'projects')"
+        class="flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-medium rounded-md cursor-pointer transition-all"
+        :class="activeTab === 'projects' ? 'bg-[#EBECEF] text-[#1D1D20]' : 'text-[#67657F] hover:bg-[#F0F1F2] hover:text-[#1D1D20]'"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        </svg>
+        Projects
+      </div>
+    </nav>
+
+    <!-- 3. 底部操作区 -->
+    <div class="p-3 border-t border-[#F0F0F2] space-y-1">
+      <button @click="$emit('openCreate')" class="w-full flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-bold text-[#5E6AD2] hover:bg-[#F0F1F2] rounded-md transition-all active:scale-[0.98]">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+        </svg>
+        New Plan
+      </button>
+      
+      <button @click="$emit('logout')" class="w-full flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-medium text-[#9593A3] hover:text-red-500 hover:bg-red-50 rounded-md transition-all">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        </svg>
+        Logout
+      </button>
+    </div>
+  </aside>
+</template>
+
+<script setup lang="ts">
+defineProps<{ username: string; activeTab: string; }>();
+defineEmits(['logout', 'openCreate', 'changeTab']);
+</script>
+</file>
 
 <file path=".gitignore">
 # Logs
@@ -100,37 +375,143 @@ dist-ssr
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="iconify iconify--logos" width="37.07" height="36" preserveAspectRatio="xMidYMid meet" viewBox="0 0 256 198"><path fill="#41B883" d="M204.8 0H256L128 220.8L0 0h97.92L128 51.2L157.44 0h47.36Z"></path><path fill="#41B883" d="m0 0l128 220.8L256 0h-51.2L128 132.48L50.56 0H0Z"></path><path fill="#35495E" d="M50.56 0L128 133.12L204.8 0h-47.36L128 51.2L97.92 0H50.56Z"></path></svg>
 </file>
 
-<file path="package.json">
-{
-  "name": "frontend",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@heroicons/vue": "^2.2.0",
-    "axios": "^1.13.2",
-    "date-fns": "^4.1.0",
-    "marked": "^17.0.1",
-    "vue": "^3.5.24",
-    "vuedraggable": "^4.1.0"
-  },
-  "devDependencies": {
-    "@types/node": "^24.10.1",
-    "@vitejs/plugin-vue": "^6.0.1",
-    "@vue/tsconfig": "^0.8.1",
-    "autoprefixer": "^10.4.23",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^3.4.17",
-    "typescript": "~5.9.3",
-    "vite": "^7.2.4",
-    "vue-tsc": "^3.1.4"
-  }
+<file path="src/components/ConfirmModal.vue">
+<!-- src/components/ConfirmModal.vue -->
+<template>
+  <div v-if="isOpen" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <!-- 遮罩 -->
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" @click="$emit('cancel')"></div>
+    
+    <!-- 内容框 -->
+    <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden border border-[#E6E7E8] animate-in fade-in zoom-in duration-200">
+      <div class="p-6">
+        <div class="flex items-center gap-3 mb-3 text-red-600">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <h3 class="text-[15px] font-bold text-[#1D1D20]">{{ title }}</h3>
+        </div>
+        
+        <p class="text-sm text-[#67657F] leading-relaxed">
+          {{ message }}
+        </p>
+
+        <div class="flex justify-end gap-3 mt-6">
+          <button 
+            type="button"
+            @click="$emit('cancel')" 
+            class="px-4 py-1.5 text-xs font-bold text-[#67657F] bg-white border border-[#E6E7E8] rounded-md hover:bg-gray-50 transition-all"
+          >
+            取消
+          </button>
+          <button 
+            type="button"
+            @click="$emit('confirm')" 
+            class="px-4 py-1.5 text-xs font-bold text-white bg-red-500 rounded-md hover:bg-red-600 shadow-sm shadow-red-100 transition-all"
+          >
+            确认删除
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+defineProps<{
+  isOpen: boolean;
+  title: string;
+  message: string;
+}>();
+
+defineEmits(['confirm', 'cancel']);
+</script>
+</file>
+
+<file path="src/components/ToastContainer.vue">
+<!-- src/components/ToastContainer.vue -->
+<template>
+  <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-3 pointer-events-none">
+    <transition-group 
+      name="toast" 
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="transform translate-y-4 opacity-0"
+      enter-to-class="transform translate-y-0 opacity-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="transform scale-100 opacity-100"
+      leave-to-class="transform scale-95 opacity-0"
+    >
+      <div 
+        v-for="toast in toastStore.toasts" 
+        :key="toast.id"
+        class="pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-lg border shadow-lg min-w-[300px] bg-white/90 backdrop-blur-md"
+        :class="[
+          toast.type === 'success' ? 'border-emerald-100 text-emerald-800' : 
+          toast.type === 'error' ? 'border-red-100 text-red-800' : 'border-[#E6E7E8] text-[#1D1D20]'
+        ]"
+      >
+        <!-- 图标 -->
+        <div class="shrink-0">
+          <svg v-if="toast.type === 'success'" class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <svg v-else-if="toast.type === 'error'" class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <svg v-else class="w-5 h-5 text-[#5E6AD2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        
+        <!-- 文字 -->
+        <span class="text-sm font-medium tracking-tight">{{ toast.message }}</span>
+
+        <!-- 手动关闭按钮 -->
+        <button @click="toastStore.remove(toast.id)" class="ml-auto text-gray-400 hover:text-gray-600">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+      </div>
+    </transition-group>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { toastStore } from '../toast';
+</script>
+</file>
+
+<file path="src/toast.ts">
+// src/toast.ts
+import { reactive } from 'vue';
+
+// 通知类型
+export type ToastType = 'success' | 'error' | 'info';
+
+interface ToastItem {
+  id: number;
+  message: string;
+  type: ToastType;
 }
+
+// 定义一个响应式存储
+export const toastStore = reactive({
+  toasts: [] as ToastItem[],
+  
+  // 显示通知的方法
+  show(message: string, type: ToastType = 'success', duration = 3000) {
+    const id = Date.now();
+    this.toasts.push({ id, message, type });
+
+    // 自动移除
+    setTimeout(() => {
+      this.remove(id);
+    }, duration);
+  },
+
+  remove(id: number) {
+    this.toasts = this.toasts.filter(t => t.id !== id);
+  }
+});
 </file>
 
 <file path="postcss.config.js">
@@ -143,134 +524,6 @@ export default {
 }
 </file>
 
-<file path="src/api.ts">
-// src/api.ts
-import axios from 'axios';
-
-const api = axios.create({
-  baseURL: 'http://127.0.0.1:3000/api',
-  timeout: 5000,
-});
-
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// 响应拦截器：处理统一报错
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response) {
-      const { status, data } = error.response;
-      
-      // 1. 如果 Token 过期
-      if (status === 401) {
-        localStorage.removeItem('token');
-        // 可以触发全局事件让页面跳转到登录或刷新
-        if (!window.location.pathname.includes('/login')) {
-           // window.location.reload(); 
-        }
-      }
-
-      // 2. 格式化错误信息供组件使用
-      // 即使是报错，我们也把后端返回的 message 抛出去
-      return Promise.reject(error);
-    }
-    return Promise.reject(new Error('网络连接异常'));
-  }
-);
-
-export default api;
-</file>
-
-<file path="src/components/LoginModal.vue">
-<!-- src/components/LoginModal.vue -->
-<template>
-  <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-    <!-- 遮罩层 -->
-    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" @click="$emit('close')"></div>
-    
-    <!-- 内容框 -->
-    <div class="relative bg-white rounded-lg shadow-xl w-full max-w-sm p-6 overflow-hidden border border-[#E6E7E8]">
-      <h2 class="text-lg font-semibold text-center mb-4 text-[#1D1D20]">管理员登录</h2>
-      
-      <form @submit.prevent="handleLogin" class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-[#67657F] mb-1">用户名</label>
-          <input 
-            v-model="form.username" 
-            type="text" 
-            class="w-full px-3 py-2 border border-[#E6E7E8] rounded-md focus:ring-1 focus:ring-[#5E6AD2] focus:border-[#5E6AD2] outline-none transition"
-            required
-          />
-        </div>
-        
-        <div>
-          <label class="block text-sm font-medium text-[#67657F] mb-1">密码</label>
-          <input 
-            v-model="form.password" 
-            type="password" 
-            class="w-full px-3 py-2 border border-[#E6E7E8] rounded-md focus:ring-1 focus:ring-[#5E6AD2] focus:border-[#5E6AD2] outline-none transition"
-            required
-          />
-        </div>
-
-        <div v-if="errorMsg" class="text-xs text-red-500 text-center bg-red-50 p-2 rounded">
-          {{ errorMsg }}
-        </div>
-
-        <button 
-          type="submit" 
-          :disabled="loading"
-          class="w-full px-3 py-1.5 rounded-md font-medium transition-all duration-200 border border-transparent bg-[#5E6AD2] text-white hover:bg-[#525BC2]"
-        >
-          {{ loading ? '登录中...' : '立即登录' }}
-        </button>
-      </form>
-    </div>
-  </div>
-</template>
-
-<script setup lang="ts">
-import { ref, reactive } from 'vue';
-import api from '../api';
-
-defineProps<{ isOpen: boolean }>();
-const emit = defineEmits(['close', 'login-success']);
-
-const loading = ref(false);
-const errorMsg = ref('');
-const form = reactive({ username: '', password: '' });
-
-const handleLogin = async () => {
-  loading.value = true;
-  errorMsg.value = '';
-  
-  try {
-    const res = await api.post('/login', form);
-    // 保存 Token 和 用户名
-    localStorage.setItem('token', res.data.token);
-    localStorage.setItem('username', res.data.username);
-    
-    // 通知父组件登录成功
-    emit('login-success');
-    emit('close');
-  } catch (err: any) {
-    console.error(err);
-    errorMsg.value = err.response?.status === 401 
-      ? '用户名或密码错误' 
-      : '登录失败，请检查网络';
-  } finally {
-    loading.value = false;
-  }
-};
-</script>
-</file>
-
 <file path="src/main.ts">
 // main.ts
 import { createApp } from 'vue'
@@ -278,93 +531,6 @@ import './style.css'
 import App from './App.vue'
 
 createApp(App).mount('#app')
-</file>
-
-<file path="src/style.css">
-/* style.css */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-body {
-  @apply bg-[#FAFAFC] text-[#1D1D20];
-}
-
-/* Linear风格的滚动条 */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #D1D1D6;
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #B1B1B6;
-}
-
-/* Linear风格的输入框 */
-input, textarea, select {
-  @apply transition-colors duration-200;
-}
-
-input:focus, textarea:focus, select:focus {
-  @apply ring-0 outline-none;
-}
-
-/* Linear风格的按钮 */
-.btn-linear {
-  @apply px-3 py-1.5 rounded-md font-medium transition-all duration-200 border border-transparent;
-}
-
-.btn-linear:hover {
-  @apply bg-opacity-90;
-}
-
-.btn-primary {
-  @apply bg-[#5E6AD2] text-white hover:bg-[#525BC2];
-}
-
-.btn-secondary {
-  @apply bg-[#67657F] text-white hover:bg-[#5B5A72];
-}
-
-.btn-outline {
-  @apply bg-transparent border border-[#E6E7E8] text-[#67657F] hover:bg-white;
-}
-
-/* Linear风格的卡片 */
-.card-linear {
-  @apply bg-white rounded-lg border border-[#E6E7E8] shadow-sm transition-all duration-200;
-}
-
-/* Linear风格的标签 */
-.tag-linear {
-  @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
-}
-
-/* 定制 markdown 渲染出来的样式 */
-.prose ul, .prose ol {
-  @apply my-1 space-y-0.5;
-}
-
-.prose strong {
-  @apply text-[#1D1D20] font-bold;
-}
-
-.prose code {
-  @apply bg-gray-100 text-red-500 px-1 rounded text-xs font-mono;
-}
-
-.prose p {
-  @apply leading-relaxed;
-}
 </file>
 
 <file path="src/types.ts">
@@ -490,21 +656,37 @@ export default defineConfig({
 })
 </file>
 
-<file path="index.html">
-<!-- index.html -->
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LifePlan | 记录过程，复盘结果</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
-  </body>
-</html>
+<file path="package.json">
+{
+  "name": "frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@heroicons/vue": "^2.2.0",
+    "axios": "^1.13.2",
+    "date-fns": "^4.1.0",
+    "marked": "^17.0.1",
+    "vue": "^3.5.24",
+    "vuedraggable": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "@vue/tsconfig": "^0.8.1",
+    "autoprefixer": "^10.4.23",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
+    "typescript": "~5.9.3",
+    "vite": "^7.2.4",
+    "vue-tsc": "^3.1.4"
+  }
+}
 </file>
 
 <file path="README.md">
@@ -588,77 +770,418 @@ src/
 这个项目展示了现代前端开发的最佳实践，包括组件化、类型安全、响应式设计等，同时通过参考Linear的UI风格实现了美观的用户界面。
 </file>
 
+<file path="src/style.css">
+/* style.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-[#FAFAFC] text-[#1D1D20];
+}
+
+/* Linear风格的滚动条 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D1D1D6;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #B1B1B6;
+}
+
+/* Linear风格的输入框 */
+input, textarea, select {
+  @apply transition-colors duration-200;
+}
+
+input:focus, textarea:focus, select:focus {
+  @apply ring-0 outline-none;
+}
+
+/* Linear风格的按钮 */
+.btn-linear {
+  @apply px-3 py-1.5 rounded-md font-medium transition-all duration-200 border border-transparent;
+}
+
+.btn-linear:hover {
+  @apply bg-opacity-90;
+}
+
+.btn-primary {
+  @apply bg-[#5E6AD2] text-white hover:bg-[#525BC2];
+}
+
+.btn-secondary {
+  @apply bg-[#67657F] text-white hover:bg-[#5B5A72];
+}
+
+.btn-outline {
+  @apply bg-transparent border border-[#E6E7E8] text-[#67657F] hover:bg-white;
+}
+
+/* Linear风格的卡片 */
+.card-linear {
+  @apply bg-white rounded-lg border border-[#E6E7E8] shadow-sm transition-all duration-200;
+}
+
+/* Linear风格的标签 */
+.tag-linear {
+  @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
+}
+
+/* 定制 markdown 渲染出来的样式 */
+.prose ul, .prose ol {
+  @apply my-1 space-y-0.5;
+}
+
+.prose strong {
+  @apply text-[#1D1D20] font-bold;
+}
+
+.prose code {
+  @apply bg-gray-100 text-red-500 px-1 rounded text-xs font-mono;
+}
+
+.prose p {
+  @apply leading-relaxed;
+}
+</file>
+
+<file path="index.html">
+<!-- index.html -->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LifePlan</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
+</file>
+
+<file path="src/api.ts">
+// src/api.ts
+import axios from 'axios';
+import { toastStore } from './toast';
+const api = axios.create({
+  baseURL: 'http://127.0.0.1:3000/api',
+  timeout: 5000,
+});
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// 响应拦截器：处理统一报错
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response) {
+      const { status, data } = error.response;
+
+      // 1. 【关键修复】将这里从 const 改为 let
+      let displayMessage = data.message || '网络请求失败';
+
+      // 2. 如果后端返回了具体的 errors 对象（校验失败）
+      if (data.errors && typeof data.errors === 'object') {
+        try {
+          const firstField = Object.keys(data.errors)[0];
+          // 添加检查确保 firstField 存在
+          if (firstField && data.errors[firstField] && Array.isArray(data.errors[firstField]) && data.errors[firstField].length > 0) {
+            const firstError = data.errors[firstField][0];
+            if (firstError) {
+              displayMessage = firstError; // 只有 let 声明的变量才能被这样重新赋值
+            }
+          }
+        } catch (e) {
+          console.error("解析错误详情失败", e);
+        }
+      }
+
+      // 只有在不是 401 的时候才弹 Toast
+      // 401 通常代表未登录或过期，可能会有专门的逻辑（如跳转登录），不一定需要红色报错
+      if (status !== 401) {
+        toastStore.show(displayMessage, 'error');
+      }
+      // 1. 如果 Token 过期
+      if (status === 401) {
+        localStorage.removeItem('token');
+        // 可以触发全局事件让页面跳转到登录或刷新
+        if (!window.location.pathname.includes('/login')) {
+          // window.location.reload(); 
+        }
+      }
+
+      // 2. 格式化错误信息供组件使用
+      // 即使是报错，我们也把后端返回的 message 抛出去
+      return Promise.reject(error);
+    }
+    return Promise.reject(new Error('网络连接异常'));
+  }
+);
+
+export default api;
+</file>
+
+<file path="src/App.vue">
+<!-- src/App.vue -->
+<template>
+  <div class="antialiased text-[#1D1D20] font-sans">
+    <!-- 1. 未登录状态 -->
+    <div v-if="!isLoggedIn" class="min-h-screen bg-[#FAFAFC] flex items-center justify-center p-4">
+      <AuthPage @login-success="handleLoginSuccess" />
+    </div>
+
+    <!-- 2. 已登录状态 -->
+    <div v-else class="flex h-screen w-full bg-white overflow-hidden">
+      
+      <Sidebar 
+        :username="username" 
+        :activeTab="activeTab"
+        @logout="logout"
+        @openCreate="openCreateModal"
+        @changeTab="handleTabChange"
+      />
+
+      <div class="flex-1 flex flex-col min-w-0 bg-white">
+        <!-- 顶部状态栏：删除了右侧快捷键提示 -->
+        <header class="h-12 border-b border-[#F0F0F2] flex items-center px-6 shrink-0">
+          <div class="flex items-center gap-2 text-[13px]">
+            <span class="text-[#9593A3] font-medium">Workspace</span>
+            <span class="text-[#D1D1D6]">/</span>
+            <span class="font-semibold text-[#1D1D20] capitalize">{{ activeTab }}</span>
+          </div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar bg-white">
+          <div class="max-w-[1400px] mx-auto p-8">
+            <div v-if="activeTab === 'issues'">
+              <PlanList ref="planListRef" @edit="openEditModal" />
+            </div>
+
+            <div v-else class="flex flex-col items-center justify-center py-40 animate-in fade-in slide-in-from-bottom-4">
+              <div class="w-16 h-16 bg-[#FAFAFC] rounded-2xl flex items-center justify-center mb-4 border border-[#F0F0F2]">
+                <svg class="w-8 h-8 text-[#D1D1D6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              </div>
+              <h2 class="text-lg font-bold text-[#1D1D20]">{{ activeTab.toUpperCase() }} 视图建设中</h2>
+              <button @click="activeTab = 'issues'" class="mt-6 text-sm font-bold text-[#5E6AD2] hover:underline">返回我的计划</button>
+            </div>
+          </div>
+        </main>
+      </div>
+
+      <!-- 搜索面板：仅通过快捷键唤起 -->
+      <SearchPalette 
+        :isOpen="showSearch" 
+        :plans="allPlansForSearch"
+        @close="showSearch = false"
+        @select="handleSearchSelect"
+      />
+
+      <PlanModal 
+        :isOpen="showPlanModal" 
+        :editData="currentEditPlan" 
+        @close="closePlanModal" 
+        @saved="handlePlanSaved" 
+      />
+      
+      <ToastContainer />
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted, watch } from 'vue';
+import Sidebar from './components/Sidebar.vue';
+import AuthPage from './components/AuthPage.vue';
+import PlanList from './components/PlanList.vue';
+import PlanModal from './components/PlanModal.vue';
+import SearchPalette from './components/SearchPalette.vue';
+import ToastContainer from './components/ToastContainer.vue';
+import api from './api';
+import type { Plan } from './types';
+
+const isLoggedIn = ref(!!localStorage.getItem('token'));
+const username = ref(localStorage.getItem('username') || '');
+const activeTab = ref('issues');
+
+// 快捷键双击判断
+let lastTabPressTime = 0;
+
+const showPlanModal = ref(false);
+const showSearch = ref(false);
+const currentEditPlan = ref<Plan | null>(null);
+const allPlansForSearch = ref<Plan[]>([]);
+const planListRef = ref();
+
+const handleLoginSuccess = () => {
+  isLoggedIn.value = true;
+  username.value = localStorage.getItem('username') || 'Admin';
+};
+
+const logout = () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('username');
+  isLoggedIn.value = false;
+};
+
+const handleTabChange = (tab: string) => { activeTab.value = tab; };
+
+const openCreateModal = () => {
+  currentEditPlan.value = null; 
+  showPlanModal.value = true;
+};
+
+const openEditModal = (plan: Plan) => {
+  currentEditPlan.value = plan;
+  showPlanModal.value = true;
+};
+
+const closePlanModal = () => {
+  showPlanModal.value = false;
+  setTimeout(() => { currentEditPlan.value = null; }, 200);
+};
+
+const handlePlanSaved = () => {
+  if (planListRef.value) planListRef.value.fetchPlans();
+  closePlanModal();
+};
+
+const fetchAllPlansForSearch = async () => {
+  if (!isLoggedIn.value) return;
+  try {
+    const res = await api.get<Plan[]>('/plans');
+    allPlansForSearch.value = res.data;
+  } catch (err) { console.error("加载搜索数据失败"); }
+};
+
+const handleSearchSelect = (plan: Plan) => { openEditModal(plan); };
+
+// 快捷键逻辑：按两下 Tab 唤起
+const handleKeyDown = (e: KeyboardEvent) => {
+  if (e.key === 'Tab') {
+    const currentTime = Date.now();
+    const timeDiff = currentTime - lastTabPressTime;
+
+    if (timeDiff > 0 && timeDiff < 300) {
+      e.preventDefault();
+      showSearch.value = !showSearch.value;
+      lastTabPressTime = 0;
+    } else {
+      lastTabPressTime = currentTime;
+    }
+  }
+  // 备选 Ctrl+K
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault();
+    showSearch.value = !showSearch.value;
+  }
+};
+
+watch(showSearch, (open) => { if (open) fetchAllPlansForSearch(); });
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyDown);
+  if (isLoggedIn.value) username.value = localStorage.getItem('username') || 'Admin';
+});
+
+onUnmounted(() => { window.removeEventListener('keydown', handleKeyDown); });
+</script>
+
+<style>
+body { margin: 0; overflow: hidden; }
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background-color: #E6E7E8; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+
+.animate-in { animation-duration: 0.3s; animation-fill-mode: both; }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.fade-in { animation-name: fade-in; }
+@keyframes slide-in-bottom { from { transform: translateY(10px); } to { transform: translateY(0); } }
+.slide-in-from-bottom-4 { animation-name: slide-in-bottom; }
+</style>
+</file>
+
 <file path="src/components/PlanModal.vue">
 <!-- src/components/PlanModal.vue -->
 <template>
   <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-    <!-- 背景遮罩 -->
-    <div 
-      class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" 
-      @click="handleClose"
-    ></div>
-    
-    <!-- 弹窗主体 -->
-    <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden border border-[#E6E7E8] flex flex-col max-h-[95vh] animate-in fade-in zoom-in duration-200">
-      
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" @click="handleClose"></div>
+
+    <div
+      class="relative bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden border border-[#E6E7E8] flex flex-col max-h-[95vh] animate-in fade-in zoom-in duration-200">
+
       <!-- 头部 -->
       <div class="px-6 py-4 border-b border-[#E6E7E8] flex justify-between items-center bg-[#FAFAFC]">
         <h2 class="text-[15px] font-bold text-[#1D1D20] flex items-center gap-2">
           <span v-if="isEditMode" class="w-2 h-2 rounded-full bg-[#5E6AD2]"></span>
           {{ isEditMode ? '编辑计划' : '新建计划' }}
         </h2>
-        <button @click="handleClose" class="text-[#9593A3] hover:text-[#1D1D20] transition-colors p-1 hover:bg-gray-100 rounded">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        <!-- 修复：显式增加 type="button" 防止提交 -->
+        <button type="button" @click="handleClose"
+          class="text-[#9593A3] hover:text-[#1D1D20] transition-colors p-1 hover:bg-gray-100 rounded">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
         </button>
       </div>
 
-      <!-- 表单内容 -->
       <form @submit.prevent="handleSubmit" class="p-6 space-y-5 overflow-y-auto">
-        
-        <!-- 通用错误提示信息 -->
-        <div v-if="generalError" class="p-3 bg-red-50 border border-red-100 rounded-md flex items-start gap-2 text-red-600 text-sm animate-shake">
-          <svg class="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+        <div v-if="generalError"
+          class="p-3 bg-red-50 border border-red-100 rounded-md flex items-start gap-2 text-red-600 text-sm animate-shake">
           <span>{{ generalError }}</span>
         </div>
 
         <!-- 标题 -->
         <div>
           <label class="block text-[11px] font-bold text-[#67657F] uppercase tracking-wider mb-1.5">标题</label>
-          <input 
-            v-model="form.title" 
-            type="text" 
-            placeholder="任务标题..."
-            :class="[
-              'w-full px-3 py-2 bg-white border rounded-md outline-none transition-all placeholder:text-gray-300 text-sm',
-              fieldErrors.title ? 'border-red-500 ring-1 ring-red-100' : 'border-[#E6E7E8] focus:border-[#5E6AD2] focus:ring-4 focus:ring-[#5E6AD2]/10'
-            ]" 
-          />
+          <input v-model="form.title" type="text" placeholder="任务标题..." :class="[
+            'w-full px-3 py-2 bg-white border rounded-md outline-none transition-all text-sm',
+            fieldErrors.title ? 'border-red-500 ring-1 ring-red-100' : 'border-[#E6E7E8] focus:border-[#5E6AD2] focus:ring-4 focus:ring-[#5E6AD2]/10'
+          ]" />
           <p v-if="fieldErrors.title" class="text-[11px] text-red-500 mt-1 font-medium">{{ fieldErrors.title[0] }}</p>
         </div>
 
         <!-- 描述 -->
         <div>
           <label class="block text-[11px] font-bold text-[#67657F] uppercase tracking-wider mb-1.5">详细描述</label>
-          <textarea 
-            v-model="form.description" 
-            rows="3" 
-            placeholder="添加详细说明（可选）..."
-            :class="[
-              'w-full px-3 py-2 bg-white border rounded-md outline-none transition-all resize-none placeholder:text-gray-300 text-sm',
-              fieldErrors.description ? 'border-red-500 ring-1 ring-red-100' : 'border-[#E6E7E8] focus:border-[#5E6AD2] focus:ring-4 focus:ring-[#5E6AD2]/10'
-            ]"
-          ></textarea>
-          <p v-if="fieldErrors.description" class="text-[11px] text-red-500 mt-1 font-medium">{{ fieldErrors.description[0] }}</p>
+          <textarea v-model="form.description" rows="4" placeholder="描述一下你的计划..." :class="[
+            'w-full px-3 py-2 bg-white border rounded-md outline-none transition-all resize-none text-sm',
+            fieldErrors.description ? 'border-red-500 ring-1 ring-red-100' : 'border-[#E6E7E8] focus:border-[#5E6AD2] focus:ring-4 focus:ring-[#5E6AD2]/10'
+          ]"></textarea>
+          <!-- 修复点：增加显示描述错误的提示 -->
+          <p v-if="fieldErrors.description"
+            class="text-[11px] text-red-500 mt-1 font-medium animate-in fade-in slide-in-from-top-1">
+            {{ fieldErrors.description[0] }}
+          </p>
         </div>
 
-        <!-- 分类与状态 -->
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-[11px] font-bold text-[#67657F] uppercase tracking-wider mb-1.5">分类</label>
-            <select 
-              v-model="form.category" 
-              class="w-full px-3 py-2 bg-white border border-[#E6E7E8] rounded-md outline-none focus:border-[#5E6AD2] text-sm cursor-pointer"
-            >
+            <select v-model="form.category"
+              class="w-full px-3 py-2 border border-[#E6E7E8] rounded-md text-sm outline-none bg-white">
               <option value="work">工作 (Work)</option>
               <option value="life">生活 (Life)</option>
               <option value="study">学习 (Study)</option>
@@ -666,71 +1189,53 @@ src/
           </div>
           <div>
             <label class="block text-[11px] font-bold text-[#67657F] uppercase tracking-wider mb-1.5">状态</label>
-            <select 
-              v-model="form.status" 
-              class="w-full px-3 py-2 bg-white border border-[#E6E7E8] rounded-md outline-none focus:border-[#5E6AD2] text-sm disabled:bg-gray-50 disabled:text-gray-400 cursor-pointer"
-            >
+            <select v-model="form.status"
+              class="w-full px-3 py-2 border border-[#E6E7E8] rounded-md text-sm outline-none bg-white">
               <option value="pending">待办 (Backlog)</option>
-              <option value="in_progress">进行中 (In Progress)</option>
+              <option value="in_progress">进行中 (Started)</option>
               <option value="completed">已完成 (Done)</option>
             </select>
           </div>
         </div>
 
-        <!-- 优先级与截止日期 -->
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-[11px] font-bold text-[#67657F] uppercase tracking-wider mb-1.5">优先级</label>
-            <select 
-              v-model.number="form.priority" 
-              class="w-full px-3 py-2 bg-white border border-[#E6E7E8] rounded-md outline-none focus:border-[#5E6AD2] text-sm cursor-pointer"
-            >
+            <select v-model.number="form.priority"
+              class="w-full px-3 py-2 border border-[#E6E7E8] rounded-md text-sm outline-none bg-white">
               <option :value="0">无优先级</option>
-              <option :value="1">P1 - 低 (Low)</option>
-              <option :value="2">P2 - 中 (Medium)</option>
-              <option :value="3">P3 - 高 (High)</option>
+              <option :value="1">P1 - 低</option>
+              <option :value="2">P2 - 中</option>
+              <option :value="3">P3 - 高</option>
             </select>
           </div>
           <div>
             <label class="block text-[11px] font-bold text-[#67657F] uppercase tracking-wider mb-1.5">截止日期</label>
-            <input 
-              v-model="form.due_date" 
-              type="date" 
-              class="w-full px-3 py-2 bg-white border border-[#E6E7E8] rounded-md outline-none focus:border-[#5E6AD2] text-sm cursor-pointer" 
-            />
+            <input v-model="form.due_date" type="date"
+              class="w-full px-3 py-2 border border-[#E6E7E8] rounded-md text-sm outline-none bg-white" />
           </div>
         </div>
 
-        <!-- 公开性开关 -->
+        <!-- 公开性 -->
         <div class="flex items-center justify-between py-2 border-t border-[#F0F0F2]">
-          <div class="flex flex-col">
-            <span class="text-sm font-medium text-[#1D1D20]">公开此计划</span>
-            <span class="text-[11px] text-[#9593A3]">启用后，其他访客也能看到此计划</span>
-          </div>
-          <button 
-            type="button"
-            @click="form.is_public = !form.is_public"
-            :class="['relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 outline-none', form.is_public ? 'bg-[#5E6AD2]' : 'bg-gray-200']"
-          >
-            <span :class="['pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out', form.is_public ? 'translate-x-5' : 'translate-x-0']"></span>
+          <span class="text-sm font-medium text-[#1D1D20]">公开此计划</span>
+          <button type="button" @click="form.is_public = !form.is_public"
+            :class="['relative inline-flex h-5 w-10 shrink-0 rounded-full transition-colors', form.is_public ? 'bg-[#5E6AD2]' : 'bg-gray-200']">
+            <span
+              :class="['inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 mt-0.5 ml-0.5', form.is_public ? 'translate-x-5' : 'translate-x-0']"></span>
           </button>
         </div>
 
-        <!-- 底部操作按钮 -->
+        <!-- 底部 -->
         <div class="flex justify-end gap-3 pt-4 border-t border-[#E6E7E8] mt-4">
-          <button 
-            type="button" 
-            @click="handleClose" 
-            class="px-4 py-1.5 text-sm font-medium text-[#67657F] bg-white border border-[#E6E7E8] rounded-md hover:bg-gray-50 transition-all"
-          >
+          <button type="button" @click="handleClose"
+            class="px-4 py-1.5 text-sm font-medium text-[#67657F] bg-white border border-[#E6E7E8] rounded-md hover:bg-gray-50 transition-all">
             取消
           </button>
-          <button 
-            type="submit" 
-            :disabled="loading"
-            class="px-4 py-1.5 text-sm font-medium text-white bg-[#5E6AD2] rounded-md hover:bg-[#525BC2] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
-          >
-            <span v-if="loading" class="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+          <button type="submit" :disabled="loading"
+            class="px-4 py-1.5 text-sm font-medium text-white bg-[#5E6AD2] rounded-md hover:bg-[#525BC2] transition-all flex items-center gap-2">
+            <span v-if="loading"
+              class="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
             {{ isEditMode ? '保存更改' : '创建计划' }}
           </button>
         </div>
@@ -743,6 +1248,7 @@ src/
 import { ref, watch, computed } from 'vue';
 import api from '../api';
 import type { Plan } from '../types';
+import { toastStore } from '../toast';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -755,7 +1261,6 @@ const loading = ref(false);
 const fieldErrors = ref<Record<string, string[]>>({});
 const generalError = ref('');
 
-// 默认空表单
 const getInitialForm = () => ({
   title: '',
   description: '',
@@ -767,25 +1272,28 @@ const getInitialForm = () => ({
 });
 
 const form = ref(getInitialForm());
-
 const isEditMode = computed(() => !!props.editData);
 
-// 监听 editData 填充表单
+// 监听数据变化：如果有数据则填充，没数据则清空
 watch(() => props.editData, (newVal) => {
   if (newVal) {
     form.value = {
       ...newVal,
-      due_date: newVal.due_date ? newVal.due_date.split('T')[0] : '',
+      due_date: newVal.due_date ? (newVal.due_date as string).split('T')[0] : '',
       description: newVal.description || '',
     };
   } else {
     form.value = getInitialForm();
   }
-  // 重置错误
   fieldErrors.value = {};
   generalError.value = '';
 }, { immediate: true });
 
+// 统一的关闭内部函数
+const handleClose = () => {
+  if (loading.value) return;
+  emit('close');
+};
 
 const handleSubmit = async () => {
   if (!form.value.title.trim()) {
@@ -800,33 +1308,35 @@ const handleSubmit = async () => {
   try {
     const payload = {
       ...form.value,
-      // 日期处理：转为后端接受的 ISOString 格式
       due_date: form.value.due_date ? new Date(form.value.due_date).toISOString() : null,
       priority: Number(form.value.priority)
     };
 
     if (isEditMode.value && props.editData) {
       await api.patch(`/plans/${props.editData.id}`, payload);
+      toastStore.show('计划更新成功'); // 替换 alert
     } else {
       await api.post('/plans', payload);
+      toastStore.show('新计划已创建'); // 替换 alert
     }
-    
-    emit('saved'); 
-    emit('close'); // 显式触发关闭
 
-    // 重置表单，防止下次打开还有旧数据
-    form.value = getInitialForm(); 
-  } catch (err: any) {
+    emit('saved'); // 通知父组件：保存成功
+  }  catch (err: any) {
     const errorData = err.response?.data;
-    
     if (errorData) {
-      // 处理后端返回的结构化错误 (来自 AppError::ValidationError)
+      // 1. 设置字段级别的红框提示
       if (errorData.errors) {
-        fieldErrors.value = errorData.errors;
+        fieldErrors.value = errorData.errors; 
       }
-      generalError.value = errorData.message || '操作失败';
-    } else {
-      generalError.value = '无法连接到服务器，请检查网络设置';
+      
+      // 2. 设置通用的文字提示（虽然拦截器弹了 Toast，但表单顶部留一个提示更好看）
+      // 如果有具体错误，我们就显示具体的第一个，否则显示通用的
+      if (errorData.errors) {
+        const firstKey = Object.keys(errorData.errors)[0];
+        generalError.value = errorData.errors[firstKey][0];
+      } else {
+        generalError.value = errorData.message || '操作失败';
+      }
     }
   } finally {
     loading.value = false;
@@ -836,119 +1346,41 @@ const handleSubmit = async () => {
 
 <style scoped>
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-4px); }
-  75% { transform: translateX(4px); }
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-4px);
+  }
+
+  75% {
+    transform: translateX(4px);
+  }
 }
+
 .animate-shake {
   animation: shake 0.2s ease-in-out 0s 2;
 }
 
-/* 简单的进入动画 */
 .animate-in {
   animation: animate-in 0.2s ease-out;
 }
+
 @keyframes animate-in {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 </style>
-</file>
-
-<file path="src/App.vue">
-<!-- src/App.vue -->
-<template>
-  <div class="min-h-screen bg-[#FAFAFC] font-sans text-[#1D1D20]">
-    <!-- 顶部导航 -->
-    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-[#E6E7E8]">
-      <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-14 items-center">
-          <div class="flex items-center">
-            <p class="text-xl font-bold text-[#5E6AD2] tracking-tight">LifePlan</p>
-          </div>
-          <div class="flex items-center space-x-3">
-            <div v-if="isLoggedIn" class="flex items-center gap-3">
-              <span class="text-sm font-medium text-[#67657F]">Admin</span>
-              <button @click="openCreateModal" class="px-3 py-1.5 rounded-md font-medium transition-all duration-200 border border-transparent bg-[#5E6AD2] text-white hover:bg-[#525BC2]">
-                + 新建
-              </button>
-              <button @click="logout" class="text-sm text-[#67657F] hover:text-red-500 transition">
-                退出
-              </button>
-            </div>
-            <button v-else @click="showLoginModal = true" class="text-sm font-medium text-[#5E6AD2] hover:text-[#525BC2]">
-              登录
-            </button>
-          </div>
-        </div>
-      </div>
-    </nav>
-
-    <!-- 主内容 -->
-    <main class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <PlanList ref="planListRef" @edit="openEditModal" />
-    </main>
-
-    <!-- 模态框 -->
-    <LoginModal :isOpen="showLoginModal" @close="showLoginModal = false" @login-success="handleLoginSuccess" />
-    
-    <PlanModal 
-      :isOpen="showPlanModal" 
-      :editData="currentEditPlan" 
-      @close="showPlanModal = false" 
-      @saved="() => { refreshList(); showPlanModal = false; }" 
-    />
-  </div>
-</template>
-
-<script setup lang="ts">
-import { ref } from 'vue';
-import PlanList from './components/PlanList.vue';
-import LoginModal from './components/LoginModal.vue';
-import PlanModal from './components/PlanModal.vue';
-import type { Plan } from './types';
-
-// 状态
-const isLoggedIn = ref(!!localStorage.getItem('token'));
-const showLoginModal = ref(false);
-const showPlanModal = ref(false);
-const currentEditPlan = ref<Plan | null>(null);
-const planListRef = ref(); // 用于调用子组件的刷新方法
-
-// 登录成功
-const handleLoginSuccess = () => {
-  isLoggedIn.value = true;
-  refreshList(); // 登录后刷新列表，可能看到隐藏的私有计划
-};
-
-// 退出登录
-const logout = () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('username');
-  isLoggedIn.value = false;
-  location.reload();
-};
-
-// 打开新建
-const openCreateModal = () => {
-  currentEditPlan.value = null; // 清空编辑数据
-  showPlanModal.value = true;
-};
-
-// 打开编辑 (由 PlanList 子组件触发)
-const openEditModal = (plan: Plan) => {
-  currentEditPlan.value = plan;
-  showPlanModal.value = true;
-};
-
-// 刷新列表
-const refreshList = () => {
-  // 调用 PlanList 组件内部暴露的 fetchPlans 方法
-  if (planListRef.value) {
-    planListRef.value.fetchPlans();
-  }
-};
-</script>
 </file>
 
 <file path="src/components/PlanList.vue">
@@ -958,11 +1390,12 @@ const refreshList = () => {
     <!-- 1. 标题区 -->
     <div class="flex justify-between items-center border-b border-[#E6E7E8] pb-4">
       <div>
-        <h2 class="text-xl font-bold text-[#1D1D20] tracking-tight">我的计划</h2>
+        <!-- <h2 class="text-xl font-bold text-[#1D1D20] tracking-tight">我的计划</h2> -->
         <p class="text-[#67657F] text-sm mt-1">记录过程，复盘结果</p>
       </div>
       <div class="flex flex-col items-end gap-1">
-        <span class="text-xs text-[#9593A3] bg-white px-3 py-1.5 rounded-md border border-[#E6E7E8] font-semibold shadow-sm">
+        <span
+          class="text-xs text-[#9593A3] bg-white px-3 py-1.5 rounded-md border border-[#E6E7E8] font-semibold shadow-sm">
           共 {{ plans.length }} 项任务
         </span>
       </div>
@@ -972,47 +1405,45 @@ const refreshList = () => {
     <div class="flex flex-col lg:flex-row gap-4 items-center justify-between">
       <!-- 搜索框 -->
       <div class="relative w-full lg:w-96 group">
-        <span class="absolute inset-y-0 left-3 flex items-center text-[#9593A3] group-focus-within:text-[#5E6AD2] transition-colors">
+        <span
+          class="absolute inset-y-0 left-3 flex items-center text-[#9593A3] group-focus-within:text-[#5E6AD2] transition-colors">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
           </svg>
         </span>
-        <input 
-          v-model="searchText"
-          type="text" 
-          placeholder="快速搜索任务..."
-          class="w-full pl-10 pr-4 py-2 text-sm bg-white border border-[#E6E7E8] rounded-md focus:ring-4 focus:ring-[#5E6AD2]/10 focus:border-[#5E6AD2] outline-none transition-all placeholder:text-gray-300"
-        />
+        <input v-model="searchText" type="text" placeholder="快速搜索任务..."
+          class="w-full pl-10 pr-4 py-2 text-sm bg-white border border-[#E6E7E8] rounded-md focus:ring-4 focus:ring-[#5E6AD2]/10 focus:border-[#5E6AD2] outline-none transition-all placeholder:text-gray-300" />
       </div>
 
       <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
         <!-- 状态过滤器 (列表模式专用) -->
         <div v-if="viewMode === 'list'" class="flex p-1 bg-[#F0F0F2] rounded-lg border border-[#E6E7E8]">
-          <button 
+          <button
             v-for="s in [{ id: 'all', label: '全部' }, { id: 'pending', label: '待办' }, { id: 'in_progress', label: '进行中' }, { id: 'completed', label: '已完成' }]"
-            :key="s.id"
-            @click="setStatusFilter(s.id)"
-            :class="['px-4 py-1.5 text-[11px] font-bold rounded-md transition-all uppercase tracking-tight', activeStatus === s.id ? 'bg-white shadow-sm text-[#5E6AD2]' : 'text-[#67657F] hover:text-[#1D1D20]']"
-          >
+            :key="s.id" @click="setStatusFilter(s.id)"
+            :class="['px-4 py-1.5 text-[11px] font-bold rounded-md transition-all uppercase tracking-tight', activeStatus === s.id ? 'bg-white shadow-sm text-[#5E6AD2]' : 'text-[#67657F] hover:text-[#1D1D20]']">
             {{ s.label }}
           </button>
         </div>
 
         <!-- 视图切换器 -->
         <div class="flex p-1 bg-[#F0F0F2] rounded-lg border border-[#E6E7E8]">
-          <button 
-            @click="viewMode = 'list'"
+          <button @click="viewMode = 'list'"
             :class="['p-2 rounded-md transition-all', viewMode === 'list' ? 'bg-white shadow-sm text-[#5E6AD2]' : 'text-[#67657F]']"
-            title="列表视图"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            title="列表视图">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
           </button>
-          <button 
-            @click="viewMode = 'kanban'"
+          <button @click="viewMode = 'kanban'"
             :class="['p-2 rounded-md transition-all', viewMode === 'kanban' ? 'bg-white shadow-sm text-[#5E6AD2]' : 'text-[#67657F]']"
-            title="看板视图"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2m0 10V7"></path></svg>
+            title="看板视图">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2m0 10V7">
+              </path>
+            </svg>
           </button>
         </div>
       </div>
@@ -1020,45 +1451,72 @@ const refreshList = () => {
 
     <!-- 3. 内容展示区 -->
     <div v-if="loading" class="flex flex-col items-center justify-center py-32">
-      <div class="w-10 h-10 border-2 border-[#5E6AD2] border-t-white/20 border-t-transparent rounded-full animate-spin"></div>
+      <div class="w-10 h-10 border-2 border-[#5E6AD2] border-t-white/20 border-t-transparent rounded-full animate-spin">
+      </div>
     </div>
 
-    <div v-else-if="plans.length === 0" class="text-center py-32 bg-white rounded-xl border border-dashed border-[#E6E7E8]">
+    <div v-else-if="plans.length === 0"
+      class="text-center py-32 bg-white rounded-xl border border-dashed border-[#E6E7E8]">
       <div class="mb-4 text-[#D1D1D6]">
-        <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+        <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+          </path>
+        </svg>
       </div>
       <p class="text-[#67657F] text-sm font-medium">没有找到符合条件的计划</p>
       <button @click="resetFilters" class="mt-4 text-[#5E6AD2] text-xs font-bold hover:underline">显示所有任务</button>
     </div>
 
     <!-- 3a. 列表模式 -->
-    <div v-else-if="viewMode === 'list'" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 animate-in fade-in duration-300">
-      <div 
-        v-for="plan in plans" :key="plan.id" 
-        class="bg-white rounded-xl border border-[#E6E7E8] shadow-sm transition-all hover:shadow-md hover:border-[#D1D1D6] p-6 group relative"
-      >
+    <div v-else-if="viewMode === 'list'"
+      class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 animate-in fade-in duration-300">
+      <div v-for="plan in plans" :key="plan.id"
+        class="bg-white rounded-xl border border-[#E6E7E8] shadow-sm transition-all hover:shadow-md hover:border-[#D1D1D6] p-6 group relative">
         <div :class="['absolute left-0 top-0 bottom-0 w-1.5 rounded-full opacity-40', statusColor(plan.status)]"></div>
         <div class="flex justify-between items-start mb-4">
           <div class="flex gap-2">
-            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-[#F4F4F5] text-[#67657F] border border-[#E6E7E8]">{{ plan.category || '未分类' }}</span>
-            <span v-if="plan.priority > 0" :class="['text-[10px] px-2 py-0.5 rounded font-black border', priorityClass(plan.priority)]">P{{ plan.priority }}</span>
+            <span
+              class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-[#F4F4F5] text-[#67657F] border border-[#E6E7E8]">{{
+                plan.category || '未分类' }}</span>
+            <span v-if="plan.priority > 0"
+              :class="['text-[10px] px-2 py-0.5 rounded font-black border', priorityClass(plan.priority)]">P{{
+                plan.priority }}</span>
           </div>
           <div v-if="isLoggedIn" class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button @click="$emit('edit', plan)" class="p-1.5 hover:bg-gray-100 rounded-md text-[#67657F] hover:text-[#5E6AD2] transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
-            <button @click="deletePlan(plan.id)" class="p-1.5 hover:bg-red-50 rounded-md text-red-500 transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+            <button @click="$emit('edit', plan)"
+              class="p-1.5 hover:bg-gray-100 rounded-md text-[#67657F] hover:text-[#5E6AD2] transition-colors"><svg
+                class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
+                </path>
+              </svg></button>
+            <button @click="deletePlan(plan.id)"
+              class="p-1.5 hover:bg-red-50 rounded-md text-red-500 transition-colors"><svg class="w-4 h-4" fill="none"
+                stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                </path>
+              </svg></button>
           </div>
         </div>
-        <h3 class="font-bold text-[#1D1D20] text-[16px] mb-2 group-hover:text-[#5E6AD2] transition-colors line-clamp-1">{{ plan.title }}</h3>
-        
+        <h3 class="font-bold text-[#1D1D20] text-[16px] mb-2 group-hover:text-[#5E6AD2] transition-colors line-clamp-1">
+          {{ plan.title }}</h3>
+
         <!-- Markdown 渲染区域 (列表模式) -->
-        <div 
+        <div
           class="text-[#67657F] text-[13px] mt-2 line-clamp-2 leading-relaxed mb-6 h-10 prose prose-sm prose-slate max-w-none overflow-hidden"
-          v-html="renderMarkdown(plan.description)"
-        ></div>
+          v-html="renderMarkdown(plan.description)"></div>
 
         <div class="pt-4 border-t border-[#F0F0F2] flex justify-between items-center text-[11px] text-[#9593A3]">
-          <span class="flex items-center"><svg class="w-3.5 h-3.5 mr-1.5 text-[#D1D1D6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>{{ formatDate(plan.due_date) }}</span>
-          <span :class="['px-2.5 py-1 rounded-md font-bold uppercase tracking-widest border text-[10px]', statusBgColor(plan.status)]">{{ formatStatus(plan.status) }}</span>
+          <span class="flex items-center"><svg class="w-3.5 h-3.5 mr-1.5 text-[#D1D1D6]" fill="none"
+              stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            </svg>{{ formatDate(plan.due_date) }}</span>
+          <span
+            :class="['px-2.5 py-1 rounded-md font-bold uppercase tracking-widest border text-[10px]', statusBgColor(plan.status)]">{{
+              formatStatus(plan.status) }}</span>
         </div>
       </div>
     </div>
@@ -1071,38 +1529,38 @@ const refreshList = () => {
             <div class="flex items-center gap-2">
               <span :class="['w-2.5 h-2.5 rounded-full', statusPointColor(col.id)]"></span>
               <span class="text-[11px] font-black text-[#1D1D20] uppercase tracking-widest">{{ col.label }}</span>
-              <span class="text-[10px] font-bold text-[#9593A3] bg-gray-100 px-2.5 py-0.5 rounded-full shadow-sm">{{ col.items.length }}</span>
+              <span class="text-[10px] font-bold text-[#9593A3] bg-gray-100 px-2.5 py-0.5 rounded-full shadow-sm">{{
+                col.items.length }}</span>
             </div>
           </div>
 
-          <draggable 
-            v-model="col.items" 
-            group="plans" 
-            item-key="id"
+          <draggable v-model="col.items" group="plans" item-key="id"
             class="flex flex-col gap-3 min-h-[600px] p-3 bg-[#F7F7F8]/70 rounded-2xl border border-transparent hover:border-[#E6E7E8] transition-colors"
-            ghost-class="opacity-40"
-            drag-class="rotate-1"
-            @change="(e: any) => handleDragChange(e, col.id)"
-          >
+            ghost-class="opacity-40" drag-class="rotate-1" @change="(e: any) => handleDragChange(e, col.id)">
             <template #item="{ element }">
-              <div 
-                @click="$emit('edit', element)"
-                class="bg-white rounded-xl border border-[#E6E7E8] p-5 shadow-sm hover:shadow-md hover:border-[#D1D1D6] transition-all cursor-grab active:cursor-grabbing group select-none"
-              >
+              <div @click="$emit('edit', element)"
+                class="bg-white rounded-xl border border-[#E6E7E8] p-5 shadow-sm hover:shadow-md hover:border-[#D1D1D6] transition-all cursor-grab active:cursor-grabbing group select-none">
                 <div class="flex justify-between items-start mb-3">
-                  <span v-if="element.priority > 0" :class="['text-[9px] px-1.5 py-0.5 rounded font-black border', priorityClass(element.priority)]">P{{ element.priority }}</span>
-                  <span class="text-[10px] font-medium text-[#9593A3] tracking-tight uppercase">{{ element.category || '未分类' }}</span>
+                  <span v-if="element.priority > 0"
+                    :class="['text-[9px] px-1.5 py-0.5 rounded font-black border', priorityClass(element.priority)]">P{{
+                    element.priority }}</span>
+                  <span class="text-[10px] font-medium text-[#9593A3] tracking-tight uppercase">{{ element.category ||
+                    '未分类' }}</span>
                 </div>
-                <h4 class="text-[14px] font-bold text-[#1D1D20] leading-snug mb-2 group-hover:text-[#5E6AD2] transition-colors line-clamp-1">{{ element.title }}</h4>
-                
+                <h4
+                  class="text-[14px] font-bold text-[#1D1D20] leading-snug mb-2 group-hover:text-[#5E6AD2] transition-colors line-clamp-1">
+                  {{ element.title }}</h4>
+
                 <!-- Markdown 渲染预览 (看板模式) -->
-                <div 
+                <div
                   class="text-[12px] text-[#67657F] leading-snug mb-3 line-clamp-2 prose prose-xs max-w-none overflow-hidden"
-                  v-html="renderMarkdown(element.description)"
-                ></div>
+                  v-html="renderMarkdown(element.description)"></div>
 
                 <div v-if="element.due_date" class="flex items-center text-[10px] text-[#9593A3] font-semibold">
-                  <svg class="w-3.5 h-3.5 mr-1.5 text-[#D1D1D6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                  <svg class="w-3.5 h-3.5 mr-1.5 text-[#D1D1D6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                  </svg>
                   {{ formatDate(element.due_date) }}
                 </div>
               </div>
@@ -1112,7 +1570,17 @@ const refreshList = () => {
         <div class="flex-shrink-0 w-6 h-full"></div>
       </div>
     </div>
+
+      <!-- 在模板底部添加 ConfirmModal -->
+    <ConfirmModal 
+      :isOpen="isConfirmOpen"
+      title="删除计划"
+      message="你确定要删除这个计划吗？此操作将永久移除数据，无法撤销。"
+      @confirm="executeDelete"
+      @cancel="isConfirmOpen = false"
+    />
   </div>
+    
 </template>
 
 <script setup lang="ts">
@@ -1120,8 +1588,9 @@ import { ref, onMounted, watch, reactive } from 'vue';
 import draggable from 'vuedraggable';
 import { marked } from 'marked'; // 1. 引入 marked
 import api from '../api';
+import ConfirmModal from './ConfirmModal.vue'; 
 import type { Plan } from '../types';
-
+import { toastStore } from '../toast';
 const emit = defineEmits(['edit']);
 
 const plans = ref<Plan[]>([]);
@@ -1131,6 +1600,9 @@ const isLoggedIn = ref(!!localStorage.getItem('token'));
 const searchText = ref('');
 const activeStatus = ref('all');
 const viewMode = ref<'list' | 'kanban'>('list');
+
+const isConfirmOpen = ref(false);
+const planIdToDelete = ref<number | null>(null);
 
 const kanbanColumns = reactive([
   { id: 'pending', label: '待办 (Backlog)', items: [] as Plan[] },
@@ -1172,11 +1644,10 @@ const fetchPlans = async () => {
 
 const handleDragChange = async (event: any, newStatus: string) => {
   if (event.added) {
-    const plan = event.added.element;
     try {
-      await api.patch(`/plans/${plan.id}`, { status: newStatus });
+      await api.patch(`/plans/${event.added.element.id}`, { status: newStatus });
+      toastStore.show(`已移动到 ${formatStatus(newStatus)}`, 'info', 2000);
     } catch (err) {
-      alert('同步失败');
       fetchPlans();
     }
   }
@@ -1193,10 +1664,25 @@ watch(searchText, () => {
 });
 
 const deletePlan = async (id: number) => {
-  if (!confirm('确定删除吗？')) return;
-  await api.delete(`/plans/${id}`);
-  fetchPlans();
+  // 不再调用原生 confirm，而是保存 ID 并打开自定义 Modal
+  planIdToDelete.value = id;
+  isConfirmOpen.value = true;
 };
+// 真正执行删除的函数 (由 Modal 的 @confirm 触发)
+const executeDelete = async () => {
+  if (planIdToDelete.value === null) return;
+  
+  try {
+    await api.delete(`/plans/${planIdToDelete.value}`);
+    toastStore.show('计划已成功删除');
+    await fetchPlans();
+  } catch (err) {
+    // api.ts 拦截器会自动处理报错 Toast
+  } finally {
+    isConfirmOpen.value = false;
+    planIdToDelete.value = null;
+  }
+}; 
 
 const statusColor = (s: string) => s === 'completed' ? 'bg-emerald-500' : s === 'in_progress' ? 'bg-amber-500' : 'bg-gray-300';
 const statusBgColor = (s: string) => s === 'completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : s === 'in_progress' ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-gray-50 text-gray-500 border-gray-100';
@@ -1218,33 +1704,71 @@ defineExpose({ fetchPlans });
 </script>
 
 <style scoped>
-.scrollbar-hide::-webkit-scrollbar { display: none; }
-.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
 
-.line-clamp-1 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; overflow: hidden; }
-.line-clamp-2 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 
-@keyframes slide-in-right { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-.slide-in-from-right-4 { animation: slide-in-right 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  overflow: hidden;
+}
 
-.rotate-1 { transform: rotate(1.5deg); }
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.slide-in-from-right-4 {
+  animation: slide-in-right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.rotate-1 {
+  transform: rotate(1.5deg);
+}
 
 /* --- Markdown 内容样式补丁 --- */
 :deep(.prose) {
   color: inherit;
   font-size: inherit;
 }
+
 :deep(.prose p) {
   margin-bottom: 0.25rem;
 }
+
 :deep(.prose strong) {
   font-weight: 700;
   color: #1d1d20;
 }
+
 :deep(.prose ul) {
   list-style-type: disc;
   padding-left: 1rem;
 }
+
 :deep(.prose ol) {
   list-style-type: decimal;
   padding-left: 1rem;
