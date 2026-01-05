@@ -1,15 +1,27 @@
 // src/types.ts
 
-export interface Plan {
+export interface Project {
   id: number;
+  user_id: number;
+  name: string;
+  description?: string;
+  status: 'active' | 'completed' | 'backlog' | 'paused' | 'canceled';
+  color: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Issue {
+  id: number;
+  project_id: number;
+  user_id: number;
   title: string;
   description?: string;
-  status: 'pending' | 'in_progress' | 'completed';
-  category?: string;
-  priority: number; // <--- 新增 (0: 无, 1: 低, 2: 中, 3: 高)
+  status: 'backlog' | 'todo' | 'in_progress' | 'done' | 'canceled';
+  priority: number; // 0-4
   due_date?: string;
-  is_public: boolean;
-  created_at?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface AuthResponse {
