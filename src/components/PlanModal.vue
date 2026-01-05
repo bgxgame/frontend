@@ -153,7 +153,7 @@ watch(() => props.editData, (newVal) => {
   if (newVal) {
     form.value = {
       ...newVal,
-      due_date: newVal.due_date ? String(newVal.due_date).split('T')[0] : '',
+      due_date: newVal.due_date ? (newVal.due_date as string).split('T')[0] : '',
       description: newVal.description || '',
     };
   } else {
@@ -195,9 +195,23 @@ const handleSubmit = async () => {
     }
 
     emit('saved'); // 通知父组件：保存成功
-  } catch (err: any) {
-    // 同样，这里的错误会自动被 api.ts 拦截器捕获并弹出错误 Toast
-    // 我们只需要处理表单内部的 fieldErrors 即可 
+  }  catch (err: any) {
+    const errorData = err.response?.data;
+    if (errorData) {
+      // 1. 设置字段级别的红框提示
+      if (errorData.errors) {
+        fieldErrors.value = errorData.errors; 
+      }
+      
+      // 2. 设置通用的文字提示（虽然拦截器弹了 Toast，但表单顶部留一个提示更好看）
+      // 如果有具体错误，我们就显示具体的第一个，否则显示通用的
+      if (errorData.errors) {
+        const firstKey = Object.keys(errorData.errors)[0];
+        generalError.value = errorData.errors[firstKey][0];
+      } else {
+        generalError.value = errorData.message || '操作失败';
+      }
+    }
   } finally {
     loading.value = false;
   }

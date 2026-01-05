@@ -20,9 +20,31 @@ api.interceptors.response.use(
   (error) => {
     if (error.response) {
       const { status, data } = error.response;
-      const message = data?.message || '网络连接异常';
-      // 自动显示错误 Toast
-      toastStore.show(message, 'error');
+
+      // 1. 【关键修复】将这里从 const 改为 let
+      let displayMessage = data.message || '网络请求失败';
+
+      // 2. 如果后端返回了具体的 errors 对象（校验失败）
+      if (data.errors && typeof data.errors === 'object') {
+        try {
+          const firstField = Object.keys(data.errors)[0];
+          // 添加检查确保 firstField 存在
+          if (firstField && data.errors[firstField] && Array.isArray(data.errors[firstField]) && data.errors[firstField].length > 0) {
+            const firstError = data.errors[firstField][0];
+            if (firstError) {
+              displayMessage = firstError; // 只有 let 声明的变量才能被这样重新赋值
+            }
+          }
+        } catch (e) {
+          console.error("解析错误详情失败", e);
+        }
+      }
+
+      // 只有在不是 401 的时候才弹 Toast
+      // 401 通常代表未登录或过期，可能会有专门的逻辑（如跳转登录），不一定需要红色报错
+      if (status !== 401) {
+        toastStore.show(displayMessage, 'error');
+      }
       // 1. 如果 Token 过期
       if (status === 401) {
         localStorage.removeItem('token');
