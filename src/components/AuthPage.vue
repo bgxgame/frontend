@@ -80,6 +80,7 @@ const handleSubmit = async () => {
     const res = await api.post(endpoint, form);
     if (isLogin.value) {
       localStorage.setItem('token', res.data.token);
+      localStorage.setItem('refresh_token', res.data.refresh_token);
       localStorage.setItem('username', res.data.username);
       toastStore.show(`欢迎回来, ${res.data.username}`);
       emit('login-success');
