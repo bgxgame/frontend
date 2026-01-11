@@ -76,6 +76,7 @@
         :isOpen="showIssueModal" 
         :editData="currentEditIssue" 
         :defaultProjectId="currentProject?.id"
+        :projectName="currentProject?.name"
         @close="closeIssueModal" 
         @saved="handleIssueSaved" 
       />
