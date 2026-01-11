@@ -28,3 +28,12 @@ export interface AuthResponse {
   token: string;
   username: string;
 }
+
+export interface Comment {
+  id: number;
+  issue_id: number;
+  user_id: number;
+  username: string;
+  content: string;
+  created_at: string;
+}
