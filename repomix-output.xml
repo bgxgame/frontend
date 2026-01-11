@@ -628,503 +628,6 @@ const handleSubmit = async () => {
 </script>
 </file>
 
-<file path="src/components/IssueList.vue">
-<!-- src/components/IssueList.vue -->
-<template>
-  <div class="space-y-6">
-    <!-- 1. 顶部控制栏：返回 + 项目名 + 视图切换 -->
-    <div class="flex items-center justify-between border-b border-[#E6E7E8] pb-4">
-      <div class="flex items-center gap-4">
-        <button 
-          @click="$emit('back')" 
-          class="p-1.5 hover:bg-gray-100 rounded-md text-[#9593A3] hover:text-[#1D1D20] transition-colors"
-          title="返回项目列表"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <div class="flex flex-col">
-          <h2 class="text-lg font-bold text-[#1D1D20] tracking-tight">{{ projectName }}</h2>
-          <p class="text-[11px] text-[#9593A3] font-medium uppercase tracking-widest">Project Issues</p>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-3">
-        <!-- 视图切换器 -->
-        <div class="flex p-1 bg-[#F0F0F2] rounded-lg border border-[#E6E7E8]">
-          <button @click="viewMode = 'list'" 
-            :class="['p-1.5 rounded-md transition-all', viewMode === 'list' ? 'bg-white shadow-sm text-[#5E6AD2]' : 'text-[#67657F]']"
-            title="列表视图">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
-          </button>
-          <button @click="viewMode = 'kanban'" 
-            :class="['p-1.5 rounded-md transition-all', viewMode === 'kanban' ? 'bg-white shadow-sm text-[#5E6AD2]' : 'text-[#67657F]']"
-            title="看板视图">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2m0 10V7" /></svg>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 2. 内容区 -->
-    <div v-if="loading" class="flex justify-center py-32">
-      <div class="w-8 h-8 border-2 border-[#5E6AD2] border-t-transparent rounded-full animate-spin"></div>
-    </div>
-
-    <div v-else-if="issues.length === 0" class="text-center py-32 bg-white rounded-xl border border-dashed border-[#E6E7E8]">
-      <p class="text-[#67657F] text-sm font-medium">该项目下暂无任务，快去创建一个吧</p>
-    </div>
-
-    <!-- 2a. 列表模式 (Table/List Style) -->
-    <div v-else-if="viewMode === 'list'" class="bg-white rounded-xl border border-[#E6E7E8] overflow-hidden animate-in fade-in duration-300">
-      <!-- 表头 -->
-      <div class="flex items-center px-4 py-2 border-b border-[#E6E7E8] text-[10px] font-bold text-[#9593A3] uppercase tracking-widest bg-[#FAFAFC]">
-        <div class="flex-1">任务名称</div>
-        <div class="w-32">状态</div>
-        <div class="w-24 text-center">优先级</div>
-        <div class="w-32 text-right">截止日期</div>
-        <div class="w-10"></div>
-      </div>
-
-      <!-- 数据行 -->
-      <div class="divide-y divide-[#F0F0F2]">
-        <div v-for="issue in issues" :key="issue.id"
-          @click="$emit('edit', issue)"
-          class="group flex items-center px-4 py-2.5 hover:bg-[#F4F4F5] transition-colors cursor-pointer text-[13px]"
-        >
-          <!-- 1. 名称列 -->
-          <div class="flex-1 flex items-center gap-3 min-w-0">
-            <span :class="['shrink-0 w-2 h-2 rounded-full shadow-sm', statusPointColor(issue.status)]"></span>
-            <span class="font-semibold text-[#1D1D20] truncate group-hover:text-[#5E6AD2] transition-colors">
-              {{ issue.title }}
-            </span>
-          </div>
-
-          <!-- 2. 状态列 (Pill 标签) -->
-          <div class="w-32 flex items-center">
-            <span :class="['px-2 py-0.5 rounded text-[10px] font-black border uppercase tracking-tighter', statusTagClass(issue.status)]">
-              {{ formatStatus(issue.status) }}
-            </span>
-          </div>
-
-          <!-- 3. 优先级列 -->
-          <div class="w-24 flex justify-center">
-            <span v-if="issue.priority > 0" 
-              :class="['text-[10px] px-1.5 py-0.5 rounded font-black border shadow-sm', priorityClass(issue.priority)]">
-              P{{ issue.priority }}
-            </span>
-            <span v-else class="text-[#D1D1D6]">—</span>
-          </div>
-
-          <!-- 4. 截止日期列 -->
-          <div class="w-32 text-right text-[#67657F] font-medium text-[12px]">
-            {{ issue.due_date ? formatDate(issue.due_date) : '—' }}
-          </div>
-
-          <!-- 5. 悬浮操作 -->
-          <div class="w-10 flex justify-end">
-            <button @click.stop="confirmDelete(issue.id)" 
-              class="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-50 rounded text-red-500 transition-all">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 2b. 看板模式 (居中布局) -->
-    <div v-else class="overflow-x-auto pb-8 px-4 -mx-4 scrollbar-hide">
-      <!-- 容器居中关键类: w-fit mx-auto justify-center -->
-      <div class="flex flex-row gap-6 w-fit mx-auto min-w-full justify-center">
-        <div v-for="col in kanbanColumns" :key="col.id" class="flex-shrink-0 w-80 flex flex-col gap-4">
-          <!-- 列头部 -->
-          <div class="flex items-center gap-2 px-2">
-            <span :class="['w-2.5 h-2.5 rounded-full shadow-sm', statusPointColor(col.id)]"></span>
-            <span class="text-[11px] font-black text-[#1D1D20] uppercase tracking-widest">{{ col.label }}</span>
-            <span class="text-[10px] font-bold text-[#9593A3] bg-gray-100 px-2 py-0.5 rounded-full shadow-inner">{{ col.items.length }}</span>
-          </div>
-
-          <!-- 拖拽区域 -->
-          <draggable 
-            v-model="col.items" 
-            group="issues" 
-            item-key="id"
-            class="flex flex-col gap-3 min-h-[500px] p-3 bg-[#F7F7F8]/70 rounded-2xl border border-transparent hover:border-[#E6E7E8] transition-colors"
-            ghost-class="opacity-40"
-            @change="(e: any) => handleDragChange(e, col.id)"
-          >
-            <template #item="{ element }">
-              <div @click="$emit('edit', element)" class="bg-white rounded-xl border border-[#E6E7E8] p-4 shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing group">
-                <div class="flex justify-between items-start mb-2">
-                  <span v-if="element.priority > 0" :class="['text-[9px] px-1.5 py-0.5 rounded font-black border', priorityClass(element.priority)]">P{{ element.priority }}</span>
-                </div>
-                <h4 class="text-[14px] font-bold text-[#1D1D20] leading-snug mb-2 group-hover:text-[#5E6AD2] transition-colors line-clamp-2 text-left">
-                  {{ element.title }}
-                </h4>
-                <div v-if="element.due_date" class="text-[10px] text-[#9593A3] font-semibold flex items-center">
-                  <svg class="w-3 h-3 mr-1 text-[#D1D1D6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                  {{ formatDate(element.due_date) }}
-                </div>
-              </div>
-            </template>
-          </draggable>
-        </div>
-      </div>
-    </div>
-
-    <!-- 确认删除弹窗 -->
-    <ConfirmModal 
-      :isOpen="isConfirmOpen"
-      title="删除任务"
-      message="确定要永久删除此任务吗？此操作不可撤销。"
-      @confirm="executeDelete"
-      @cancel="isConfirmOpen = false"
-    />
-  </div>
-</template>
-
-<script setup lang="ts">
-import { ref, onMounted, watch, reactive } from 'vue';
-import draggable from 'vuedraggable';
-import api from '../api';
-import type { Issue } from '../types';
-import { toastStore } from '../toast';
-import ConfirmModal from './ConfirmModal.vue';
-
-const props = defineProps<{
-  projectId: number;
-  projectName: string;
-}>();
-
-const emit = defineEmits(['back', 'edit']);
-
-const issues = ref<Issue[]>([]);
-const loading = ref(true);
-const viewMode = ref<'list' | 'kanban'>('list');
-const isConfirmOpen = ref(false);
-const issueIdToDelete = ref<number | null>(null);
-
-const kanbanColumns = reactive([
-  { id: 'todo', label: '待办 (Todo)', items: [] as Issue[] },
-  { id: 'in_progress', label: '进行中 (Started)', items: [] as Issue[] },
-  { id: 'done', label: '已完成 (Done)', items: [] as Issue[] }
-]);
-
-const fetchIssues = async () => {
-  loading.value = true;
-  try {
-    const res = await api.get<Issue[]>(`/projects/${props.projectId}/issues`);
-    issues.value = res.data;
-
-    // 重新分发数据到看板列
-    kanbanColumns[0].items = issues.value.filter(i => i.status === 'todo' || i.status === 'backlog');
-    kanbanColumns[1].items = issues.value.filter(i => i.status === 'in_progress');
-    kanbanColumns[2].items = issues.value.filter(i => i.status === 'done');
-  } catch (err) {
-    console.error(err);
-  } finally {
-    loading.value = false;
-  }
-};
-
-const handleDragChange = async (event: any, newStatus: string) => {
-  if (event.added) {
-    const issue = event.added.element;
-    try {
-      await api.patch(`/issues/${issue.id}`, { status: newStatus });
-      toastStore.show(`已更新为 ${formatStatus(newStatus)}`, 'info', 1000);
-    } catch (err) {
-      fetchIssues(); // 失败则回滚界面
-    }
-  }
-};
-
-const confirmDelete = (id: number) => { issueIdToDelete.value = id; isConfirmOpen.value = true; };
-const executeDelete = async () => {
-  if (!issueIdToDelete.value) return;
-  try {
-    await api.delete(`/issues/${issueIdToDelete.value}`);
-    toastStore.show('任务已删除');
-    fetchIssues();
-  } finally {
-    isConfirmOpen.value = false;
-    issueIdToDelete.value = null;
-  }
-};
-
-// --- 辅助工具函数 ---
-
-const formatStatus = (s: string) => {
-  const map: Record<string, string> = {
-    'todo': 'Todo', 'in_progress': 'In Progress', 'done': 'Done', 
-    'backlog': 'Backlog', 'canceled': 'Canceled'
-  };
-  return map[s] || s;
-};
-
-const statusPointColor = (s: string) => {
-  if (s === 'done') return 'bg-emerald-500';
-  if (s === 'in_progress') return 'bg-amber-500';
-  if (s === 'todo') return 'bg-blue-500';
-  return 'bg-gray-400';
-};
-
-const statusTagClass = (s: string) => {
-  if (s === 'done') return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-  if (s === 'in_progress') return 'bg-amber-50 text-amber-600 border-amber-100';
-  if (s === 'todo') return 'bg-blue-50 text-blue-600 border-blue-100';
-  return 'bg-gray-50 text-gray-500 border-gray-100';
-};
-
-const priorityClass = (p: number) => {
-  if (p >= 3) return 'bg-red-50 text-red-600 border-red-100';
-  if (p === 2) return 'bg-amber-50 text-amber-600 border-amber-100';
-  return 'bg-blue-50 text-blue-600 border-blue-100';
-};
-
-const formatDate = (d: string) => {
-  return new Date(d).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
-};
-
-// 监听项目ID变化
-watch(() => props.projectId, fetchIssues);
-
-onMounted(fetchIssues);
-
-defineExpose({ fetchIssues });
-</script>
-
-<style scoped>
-.scrollbar-hide::-webkit-scrollbar { display: none; }
-.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-.line-clamp-2 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
-
-/* 进场动画 */
-.animate-in { animation: fade-in 0.3s ease-out; }
-@keyframes fade-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-</style>
-</file>
-
-<file path="src/components/SearchPalette.vue">
-<!-- src/components/SearchPalette.vue -->
-<template>
-  <div v-if="isOpen" class="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] px-4">
-    <!-- 遮罩层 -->
-    <div class="absolute inset-0 bg-slate-900/20 backdrop-blur-[2px]" @click="$emit('close')"></div>
-
-    <!-- 面板主体 -->
-    <div class="relative bg-white w-full max-w-xl rounded-xl shadow-2xl border border-[#E6E7E8] overflow-hidden animate-in fade-in zoom-in duration-200">
-      <!-- 输入框区域 -->
-      <div class="flex items-center px-4 border-b border-[#F0F0F2]">
-        <svg class="w-5 h-5 text-[#9593A3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-        <input 
-          ref="inputRef"
-          v-model="query"
-          type="text" 
-          placeholder="搜索项目、任务或输入指令..."
-          class="w-full px-3 py-4 text-[15px] outline-none placeholder:text-[#D1D1D6] font-medium"
-          @keydown.esc="$emit('close')"
-        />
-        <div class="px-1.5 py-0.5 border border-[#E6E7E8] rounded text-[10px] font-bold text-[#9593A3] bg-[#FAFAFC]">ESC</div>
-      </div>
-
-      <!-- 搜索结果列表 -->
-      <div class="max-h-[60vh] overflow-y-auto p-2 custom-scrollbar">
-        <div v-if="filteredItems.length > 0">
-          <div 
-            v-for="item in filteredItems" 
-            :key="item.type + item.data.id"
-            @click="handleSelect(item)"
-            class="flex items-center gap-3 px-3 py-2.5 hover:bg-[#F0F1F2] rounded-lg cursor-pointer group transition-all"
-          >
-            <!-- 左侧图标展示 -->
-            <div class="shrink-0 flex items-center justify-center w-6">
-              <!-- 项目：实心圆点 -->
-              <div v-if="item.type === 'project'" 
-                class="w-2.5 h-2.5 rounded-full shadow-sm"
-                :style="{ backgroundColor: item.data.color || '#5E6AD2' }"
-              ></div>
-              <!-- 任务：状态色小圆点 -->
-              <div v-else 
-                class="w-2 h-2 rounded-full shadow-inner"
-                :class="statusPointColor(item.data.status)"
-              ></div>
-            </div>
-
-            <!-- 文字内容 -->
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2">
-                <span class="text-[14px] font-semibold text-[#1D1D20] truncate">
-                  {{ item.type === 'project' ? item.data.name : item.data.title }}
-                </span>
-                <!-- 类型标签 -->
-                <span class="text-[9px] px-1.5 py-0.5 border border-[#E6E7E8] rounded bg-[#FAFAFC] text-[#9593A3] uppercase font-black tracking-tighter">
-                  {{ item.type }}
-                </span>
-              </div>
-              <div class="text-[11px] text-[#9593A3] mt-0.5 truncate font-medium uppercase tracking-tight">
-                {{ item.type === 'project' ? 'Workspace Project' : 'Issue in project' }}
-              </div>
-            </div>
-
-            <div class="text-[10px] font-bold text-[#5E6AD2] opacity-0 group-hover:opacity-100 transition-opacity pr-2">
-              OPEN
-            </div>
-          </div>
-        </div>
-        
-        <!-- 空状态 -->
-        <div v-else-if="query" class="py-12 text-center">
-          <p class="text-sm text-[#9593A3] font-medium">未找到匹配的 "{{ query }}"</p>
-        </div>
-        <div v-else class="py-8 px-4 text-center">
-          <div class="text-[11px] font-bold text-[#9593A3] uppercase tracking-[0.2em] mb-2">最近记录与建议</div>
-          <p class="text-sm text-[#D1D1D6]">开始输入以搜索您的工作空间...</p>
-        </div>
-      </div>
-
-      <!-- 底部操作提示 -->
-      <div class="px-4 py-2.5 bg-[#FAFAFC] border-t border-[#F0F0F2] flex items-center gap-5 text-[10px] font-bold text-[#9593A3] uppercase tracking-wider">
-        <span class="flex items-center gap-1.5"><span class="px-1 py-0.5 bg-white border border-[#E6E7E8] rounded text-[#67657F]">↑↓</span> Navigate</span>
-        <span class="flex items-center gap-1.5"><span class="px-1 py-0.5 bg-white border border-[#E6E7E8] rounded text-[#67657F]">Enter</span> Select</span>
-      </div>
-    </div>
-  </div>
-</template>
-
-<script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue';
-
-// 接收来自 App.vue 的混合 SearchItem
-const props = defineProps<{
-  isOpen: boolean;
-  items: any[]; 
-}>();
-
-const emit = defineEmits(['close', 'select']);
-
-const query = ref('');
-const inputRef = ref<HTMLInputElement | null>(null);
-
-// 核心搜索逻辑：跨类型匹配
-const filteredItems = computed(() => {
-  if (!query.value.trim()) return [];
-  const s = query.value.toLowerCase();
-  
-  return props.items.filter(item => {
-    // 项目搜 name，任务搜 title
-    const matchText = item.type === 'project' ? item.data.name : item.data.title;
-    return matchText.toLowerCase().includes(s);
-  }).slice(0, 10);
-});
-
-// 自动聚焦
-watch(() => props.isOpen, (newVal) => {
-  if (newVal) {
-    query.value = '';
-    nextTick(() => inputRef.value?.focus());
-  }
-});
-
-const handleSelect = (item: any) => {
-  emit('select', item);
-  emit('close');
-};
-
-const statusPointColor = (s: string) => {
-  switch (s) {
-    case 'done': return 'bg-emerald-500';
-    case 'in_progress': return 'bg-amber-500';
-    default: return 'bg-gray-400';
-  }
-};
-</script>
-
-<style scoped>
-.animate-in { animation-duration: 0.15s; }
-@keyframes zoom-in { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
-.zoom-in { animation-name: zoom-in; }
-
-/* 隐藏结果列表的粗糙滚动条 */
-.custom-scrollbar::-webkit-scrollbar { width: 4px; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: #E6E7E8; border-radius: 10px; }
-</style>
-</file>
-
-<file path="src/components/Sidebar.vue">
-<!-- src/components/Sidebar.vue (精简版) -->
-<template>
-  <aside class="w-60 h-screen bg-[#FAFAFC] border-r border-[#E6E7E8] flex flex-col shrink-0 select-none">
-    <!-- 1. 用户区域 -->
-    <div class="p-3 mb-2">
-      <div class="flex items-center gap-2 px-2 py-1.5 hover:bg-[#F0F1F2] rounded-md cursor-pointer transition-colors group">
-        <div class="w-5 h-5 bg-[#5E6AD2] rounded text-[10px] font-bold text-white flex items-center justify-center shrink-0 shadow-sm shadow-indigo-200">
-          {{ username ? username.charAt(0).toUpperCase() : 'U' }}
-        </div>
-        <span class="text-sm font-semibold text-[#1D1D20] truncate flex-1">{{ username || 'User' }}</span>
-        <svg class="w-3.5 h-3.5 text-[#9593A3] group-hover:text-[#1D1D20] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
-        </svg>
-      </div>
-    </div>
-
-    <!-- 2. 导航菜单：删除了 Search 选项 -->
-    <nav class="flex-1 px-3 space-y-0.5">
-      <!-- My Issues -->
-      <!-- <div 
-        @click="$emit('changeTab', 'issues')"
-        class="flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-medium rounded-md cursor-pointer transition-all"
-        :class="activeTab === 'issues' ? 'bg-[#EBECEF] text-[#1D1D20]' : 'text-[#67657F] hover:bg-[#F0F1F2] hover:text-[#1D1D20]'"
-      >
-        <svg class="w-4 h-4" :class="activeTab === 'issues' ? 'text-[#5E6AD2]' : 'text-[#67657F]'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-        My Issues
-      </div> -->
-
-      <!-- Projects -->
-      <div 
-        @click="$emit('changeTab', 'projects')"
-        class="flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-medium rounded-md cursor-pointer transition-all"
-        :class="activeTab === 'projects' ? 'bg-[#EBECEF] text-[#1D1D20]' : 'text-[#67657F] hover:bg-[#F0F1F2] hover:text-[#1D1D20]'"
-      >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-        </svg>
-        Projects
-      </div>
-    </nav>
-
-    <!-- 3. 底部操作区 -->
-    <div class="p-3 border-t border-[#F0F0F2] space-y-1">
-      <button @click="$emit('openCreate')" class="w-full flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-bold text-[#5E6AD2] hover:bg-[#F0F1F2] rounded-md transition-all active:scale-[0.98]">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
-        </svg>
-        New Plan
-      </button>
-      
-      <button @click="$emit('logout')" class="w-full flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-medium text-[#9593A3] hover:text-red-500 hover:bg-red-50 rounded-md transition-all">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-        </svg>
-        Logout
-      </button>
-    </div>
-  </aside>
-</template>
-
-<script setup lang="ts">
-defineProps<{ username: string; activeTab: string; }>();
-defineEmits(['logout', 'openCreate', 'changeTab']);
-</script>
-</file>
-
 <file path="src/main.ts">
 // main.ts
 import { createApp } from 'vue'
@@ -1348,6 +851,234 @@ src/
 - **预览生产版本**: `npm run preview`
 
 这个项目展示了现代前端开发的最佳实践，包括组件化、类型安全、响应式设计等，同时通过参考Linear的UI风格实现了美观的用户界面。
+</file>
+
+<file path="src/components/IssueList.vue">
+<!-- src/components/IssueList.vue -->
+<template>
+  <div class="space-y-6">
+    <!-- 1. 顶部控制栏 -->
+    <div class="flex items-center justify-between border-b border-[#E6E7E8] pb-4">
+      <div class="flex items-center gap-4">
+        <button 
+          @click="$emit('back')" 
+          class="p-1.5 hover:bg-gray-100 rounded-md text-[#9593A3] hover:text-[#1D1D20] transition-colors"
+          title="返回项目列表"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <div class="flex flex-col">
+          <h2 class="text-lg font-bold text-[#1D1D20] tracking-tight">{{ projectName }}</h2>
+          <p class="text-[11px] text-[#9593A3] font-medium uppercase tracking-widest">Project Issues</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button 
+          @click="$emit('create')" 
+          class="flex items-center gap-1.5 px-3 py-1.5 bg-[#5E6AD2] text-white text-[12px] font-bold rounded-md hover:bg-[#525BC2] transition-all shadow-sm shadow-indigo-100 active:scale-[0.98]"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+          </svg>
+          New Issue
+        </button>
+
+        <div class="w-px h-4 bg-[#E6E7E8] mx-1"></div>
+
+        <div class="flex p-1 bg-[#F0F0F2] rounded-lg border border-[#E6E7E8]">
+          <button @click="viewMode = 'list'" 
+            :class="['p-1.5 rounded-md transition-all', viewMode === 'list' ? 'bg-white shadow-sm text-[#5E6AD2]' : 'text-[#67657F]']">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+          </button>
+          <button @click="viewMode = 'kanban'" 
+            :class="['p-1.5 rounded-md transition-all', viewMode === 'kanban' ? 'bg-white shadow-sm text-[#5E6AD2]' : 'text-[#67657F]']">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2m0 10V7" /></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. 内容区 -->
+    <div v-if="loading" class="flex justify-center py-32">
+      <div class="w-8 h-8 border-2 border-[#5E6AD2] border-t-transparent rounded-full animate-spin"></div>
+    </div>
+
+    <div v-else-if="issues.length === 0" class="text-center py-32 bg-white rounded-xl border border-dashed border-[#E6E7E8]">
+      <p class="text-[#67657F] text-sm font-medium">该项目下暂无任务</p>
+      <button @click="$emit('create')" class="mt-4 text-[#5E6AD2] text-xs font-bold hover:underline">立即创建第一个任务</button>
+    </div>
+
+    <!-- 2a. 列表模式 -->
+    <div v-else-if="viewMode === 'list'" class="bg-white rounded-xl border border-[#E6E7E8] overflow-hidden animate-in fade-in duration-300">
+      <div class="flex items-center px-4 py-2 border-b border-[#E6E7E8] text-[10px] font-bold text-[#9593A3] uppercase tracking-widest bg-[#FAFAFC]">
+        <div class="flex-1">任务名称</div>
+        <div class="w-32">状态</div>
+        <div class="w-24 text-center">优先级</div>
+        <div class="w-32 text-right">截止日期</div>
+        <div class="w-10"></div>
+      </div>
+
+      <div class="divide-y divide-[#F0F0F2]">
+        <div v-for="issue in issues" :key="issue.id"
+          @click="$emit('edit', issue)"
+          class="group flex items-center px-4 py-2.5 hover:bg-[#F4F4F5] transition-colors cursor-pointer text-[13px]"
+        >
+          <div class="flex-1 flex items-center gap-3 min-w-0">
+            <span :class="['shrink-0 w-2 h-2 rounded-full shadow-sm', statusPointColor(issue.status)]"></span>
+            <span class="font-semibold text-[#1D1D20] truncate group-hover:text-[#5E6AD2] transition-colors">
+              {{ issue.title }}
+            </span>
+          </div>
+
+          <div class="w-32 flex items-center">
+            <span :class="['px-2 py-0.5 rounded text-[10px] font-black border uppercase tracking-tighter', statusTagClass(issue.status)]">
+              {{ formatStatus(issue.status) }}
+            </span>
+          </div>
+
+          <div class="w-24 flex justify-center">
+            <span v-if="issue.priority > 0" :class="['text-[10px] px-1.5 py-0.5 rounded font-black border shadow-sm', priorityClass(issue.priority)]">
+              P{{ issue.priority }}
+            </span>
+            <span v-else class="text-[#D1D1D6]">—</span>
+          </div>
+
+          <div class="w-32 text-right text-[#67657F] font-medium text-[12px]">
+            {{ issue.due_date ? formatDate(issue.due_date) : '—' }}
+          </div>
+
+          <div class="w-10 flex justify-end">
+            <button @click.stop="confirmDelete(issue.id)" class="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-50 rounded text-red-500 transition-all">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2b. 看板模式 -->
+    <div v-else class="overflow-x-auto pb-8 px-4 -mx-4 scrollbar-hide">
+      <div class="flex flex-row gap-6 w-fit mx-auto min-w-full justify-center">
+        <div v-for="col in kanbanColumns" :key="col.id" class="flex-shrink-0 w-80 flex flex-col gap-4">
+          <div class="flex items-center gap-2 px-2">
+            <span :class="['w-2.5 h-2.5 rounded-full shadow-sm', statusPointColor(col.id)]"></span>
+            <span class="text-[11px] font-black text-[#1D1D20] uppercase tracking-widest">{{ col.label }}</span>
+            <span class="text-[10px] font-bold text-[#9593A3] bg-gray-100 px-2 py-0.5 rounded-full shadow-inner">{{ col.items.length }}</span>
+          </div>
+
+          <draggable 
+            v-model="col.items" 
+            group="issues" 
+            item-key="id"
+            class="flex flex-col gap-3 min-h-[500px] p-3 bg-[#F7F7F8]/70 rounded-2xl border border-transparent hover:border-[#E6E7E8] transition-colors"
+            ghost-class="opacity-40"
+            @change="(e: any) => handleDragChange(e, col.id)"
+          >
+            <template #item="{ element }">
+              <div @click="$emit('edit', element)" class="bg-white rounded-xl border border-[#E6E7E8] p-4 shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing group">
+                <div class="flex justify-between items-start mb-2">
+                  <span v-if="element.priority > 0" :class="['text-[9px] px-1.5 py-0.5 rounded font-black border', priorityClass(element.priority)]">P{{ element.priority }}</span>
+                </div>
+                <h4 class="text-[14px] font-bold text-[#1D1D20] leading-snug mb-2 group-hover:text-[#5E6AD2] transition-colors line-clamp-2 text-left">{{ element.title }}</h4>
+                <div v-if="element.due_date" class="text-[10px] text-[#9593A3] font-semibold flex items-center">
+                  <svg class="w-3 h-3 mr-1 text-[#D1D1D6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                  {{ formatDate(element.due_date) }}
+                </div>
+              </div>
+            </template>
+          </draggable>
+        </div>
+      </div>
+    </div>
+
+    <ConfirmModal :isOpen="isConfirmOpen" title="删除任务" message="确定要永久删除此任务吗？此操作不可撤销。" @confirm="executeDelete" @cancel="isConfirmOpen = false" />
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, watch, reactive } from 'vue';
+import draggable from 'vuedraggable';
+import api from '../api';
+import type { Issue } from '../types';
+import { toastStore } from '../toast';
+import ConfirmModal from './ConfirmModal.vue';
+
+const props = defineProps<{ projectId: number; projectName: string; }>();
+const emit = defineEmits(['back', 'edit', 'create']);
+
+const issues = ref<Issue[]>([]);
+const loading = ref(true);
+const viewMode = ref<'list' | 'kanban'>('list');
+const isConfirmOpen = ref(false);
+const issueIdToDelete = ref<number | null>(null);
+
+const kanbanColumns = reactive([
+  { id: 'todo', label: '待办 (Todo)', items: [] as Issue[] },
+  { id: 'in_progress', label: '进行中 (Started)', items: [] as Issue[] },
+  { id: 'done', label: '已完成 (Done)', items: [] as Issue[] }
+]);
+
+// 1. 修改 fetchIssues：支持静默更新 (不显示全屏 loading)
+const fetchIssues = async (silent = false) => {
+  if (!silent) loading.value = true;
+  try {
+    const res = await api.get<Issue[]>(`/projects/${props.projectId}/issues`);
+    issues.value = res.data;
+
+    // 同步更新看板列数据
+    kanbanColumns[0].items = issues.value.filter(i => i.status === 'todo' || i.status === 'backlog');
+    kanbanColumns[1].items = issues.value.filter(i => i.status === 'in_progress');
+    kanbanColumns[2].items = issues.value.filter(i => i.status === 'done');
+  } catch (err) {
+    console.error(err);
+  } finally {
+    if (!silent) loading.value = false;
+  }
+};
+
+// 2. 修改 handleDragChange：成功后触发静默同步
+const handleDragChange = async (event: any, newStatus: string) => {
+  if (event.added) {
+    const issue = event.added.element;
+    try {
+      await api.patch(`/issues/${issue.id}`, { status: newStatus });
+      toastStore.show(`已更新为 ${formatStatus(newStatus)}`, 'info', 1000);
+      
+      // 关键：拖拽结束后同步全局 issues 数据，这样切换到列表视图时状态就是对的
+      await fetchIssues(true); 
+    } catch (err) {
+      // 失败则强制刷新回滚
+      fetchIssues(); 
+    }
+  }
+};
+
+const confirmDelete = (id: number) => { issueIdToDelete.value = id; isConfirmOpen.value = true; };
+const executeDelete = async () => {
+  if (!issueIdToDelete.value) return;
+  try {
+    await api.delete(`/issues/${issueIdToDelete.value}`);
+    toastStore.show('任务已删除');
+    fetchIssues();
+  } finally {
+    isConfirmOpen.value = false;
+    issueIdToDelete.value = null;
+  }
+};
+
+const formatStatus = (s: string) => ({ todo: 'Todo', in_progress: 'Started', done: 'Done', backlog: 'Backlog', canceled: 'Canceled' }[s] || s);
+const statusPointColor = (s: string) => s === 'done' ? 'bg-emerald-500' : s === 'in_progress' ? 'bg-amber-500' : s === 'todo' ? 'bg-blue-500' : 'bg-gray-400';
+const statusTagClass = (s: string) => s === 'done' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : s === 'in_progress' ? 'bg-amber-50 text-amber-600 border-amber-100' : s === 'todo' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-gray-50 text-gray-500 border-gray-100';
+const priorityClass = (p: number) => p >= 3 ? 'bg-red-50 text-red-600 border-red-100' : p === 2 ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-blue-50 text-blue-600 border-blue-100';
+const formatDate = (d: string) => new Date(d).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+
+watch(() => props.projectId, () => fetchIssues());
+onMounted(fetchIssues);
+defineExpose({ fetchIssues });
+</script>
 </file>
 
 <file path="src/components/IssueModal.vue">
@@ -1747,6 +1478,293 @@ textarea::placeholder { color: #D1D1D6; }
 </style>
 </file>
 
+<file path="src/components/SearchPalette.vue">
+<!-- src/components/SearchPalette.vue -->
+<template>
+  <div v-if="isOpen" class="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] px-4" @keydown="handleKeyDown">
+    <div class="absolute inset-0 bg-slate-900/20 backdrop-blur-[2px]" @click="$emit('close')"></div>
+
+    <div class="relative bg-white w-full max-w-xl rounded-xl shadow-2xl border border-[#E6E7E8] overflow-hidden animate-in fade-in zoom-in duration-200">
+      <!-- 搜索输入框 -->
+      <div class="flex items-center px-4 border-b border-[#F0F0F2]">
+        <div class="shrink-0">
+          <span v-if="loading" class="w-5 h-5 border-2 border-[#5E6AD2] border-t-transparent rounded-full animate-spin block"></span>
+          <svg v-else class="w-5 h-5 text-[#9593A3]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+        </div>
+        <input 
+          ref="inputRef"
+          v-model="query"
+          type="text" 
+          placeholder="搜索项目、任务内容..."
+          class="w-full px-3 py-4 text-[15px] outline-none font-medium placeholder:text-[#D1D1D6]"
+        />
+        <div class="px-1.5 py-0.5 border border-[#E6E7E8] rounded text-[10px] font-bold text-[#9593A3] bg-[#FAFAFC]">ESC</div>
+      </div>
+
+      <!-- 搜索结果列表 -->
+      <div class="max-h-[60vh] overflow-y-auto p-2 custom-scrollbar bg-[#FAFAFC]/30">
+        <div v-if="results.length > 0">
+          <div 
+            v-for="(item, index) in results" 
+            :key="item.type + item.id"
+            @mouseenter="selectedIndex = index"
+            @click="handleSelect(item)"
+            :class="[
+              'flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-75',
+              selectedIndex === index ? 'bg-[#5E6AD2] text-white shadow-md' : 'hover:bg-[#F0F1F2]'
+            ]"
+          >
+            <!-- 左侧图标 -->
+            <div class="shrink-0 flex items-center justify-center w-6">
+              <div v-if="item.type === 'project'" 
+                class="w-2.5 h-2.5 rounded-full"
+                :style="{ backgroundColor: selectedIndex === index ? '#fff' : (item.color || '#5E6AD2') }"
+              ></div>
+              <div v-else 
+                class="w-2 h-2 rounded-full shadow-inner"
+                :class="selectedIndex === index ? 'bg-white' : statusPointColor(item.status)"
+              ></div>
+            </div>
+
+            <!-- 文字内容 -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="text-[14px] font-semibold truncate">{{ item.title }}</span>
+                <span :class="['text-[9px] px-1.5 py-0.5 border rounded uppercase font-black tracking-tighter', selectedIndex === index ? 'border-white/30 bg-white/20 text-white' : 'border-[#E6E7E8] bg-[#FAFAFC] text-[#9593A3]']">
+                  {{ item.type }}
+                </span>
+              </div>
+              <div :class="['text-[11px] truncate font-medium mt-0.5', selectedIndex === index ? 'text-white/70' : 'text-[#9593A3]']">
+                {{ item.description || '暂无详细描述' }}
+              </div>
+            </div>
+
+            <div v-if="selectedIndex === index" class="text-[10px] font-bold opacity-80 pr-2">ENTER</div>
+          </div>
+        </div>
+        
+        <!-- 空状态/引导 -->
+        <div v-else-if="query && !loading" class="py-12 text-center text-sm text-[#9593A3]">
+          未找到与 "{{ query }}" 相关的结果
+        </div>
+        <div v-else-if="!query" class="py-12 text-center">
+          <p class="text-xs font-bold text-[#9593A3] uppercase tracking-[0.2em] mb-2">Global Search</p>
+          <p class="text-sm text-[#D1D1D6]">输入关键词搜索您的工作空间...</p>
+        </div>
+      </div>
+
+      <!-- 底部帮助栏 -->
+      <div class="px-4 py-2.5 bg-[#FAFAFC] border-t border-[#F0F0F2] flex items-center gap-5 text-[10px] font-bold text-[#9593A3] uppercase tracking-wider">
+        <span class="flex items-center gap-1.5"><span class="px-1 py-0.5 bg-white border border-[#E6E7E8] rounded text-[#67657F]">↑↓</span> 选择</span>
+        <span class="flex items-center gap-1.5"><span class="px-1 py-0.5 bg-white border border-[#E6E7E8] rounded text-[#67657F]">Enter</span> 确认</span>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, watch, nextTick } from 'vue';
+import api from '../api';
+
+const props = defineProps<{ isOpen: boolean }>();
+const emit = defineEmits(['close', 'select']);
+
+const query = ref('');
+const results = ref<any[]>([]);
+const loading = ref(false);
+const selectedIndex = ref(0);
+const inputRef = ref<HTMLInputElement | null>(null);
+
+let debounceTimer: any = null;
+
+// 核心搜索逻辑：调用后端接口
+const performSearch = async () => {
+  if (!query.value.trim()) {
+    results.value = [];
+    return;
+  }
+
+  loading.value = true;
+  try {
+    const res = await api.get('/search', { params: { q: query.value } });
+    // 接口返回的数据结构已经由后端对齐
+    results.value = res.data;
+    selectedIndex.value = 0;
+  } catch (err) {
+    console.error("搜索失败", err);
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 监听输入并执行防抖
+watch(query, () => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    performSearch();
+  }, 300); // 300ms 防抖
+});
+
+// 键盘导航
+const handleKeyDown = (e: KeyboardEvent) => {
+  if (results.value.length === 0) return;
+  
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    selectedIndex.value = (selectedIndex.value + 1) % results.value.length;
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    selectedIndex.value = (selectedIndex.value - 1 + results.value.length) % results.value.length;
+  } else if (e.key === 'Enter') {
+    const selected = results.value[selectedIndex.value];
+    if (selected) handleSelect(selected);
+  }
+};
+
+const handleSelect = (item: any) => {
+  // 注意：这里的 item 结构现在是后端返回的统一格式
+  // 需要将其包装成 App.vue 期望的 { type, data } 格式，或者修改 App.vue 的 handleSearchSelect
+  emit('select', { type: item.type, data: item });
+  emit('close');
+};
+
+watch(() => props.isOpen, (newVal) => {
+  if (newVal) {
+    query.value = '';
+    results.value = [];
+    nextTick(() => inputRef.value?.focus());
+  }
+});
+
+const statusPointColor = (s: string) => {
+  switch (s) {
+    case 'done': return 'bg-emerald-500';
+    case 'in_progress': return 'bg-amber-500';
+    default: return 'bg-gray-400';
+  }
+};
+</script>
+</file>
+
+<file path="src/components/Sidebar.vue">
+<!-- src/components/Sidebar.vue -->
+<template>
+  <aside class="w-60 h-screen bg-[#FAFAFC] border-r border-[#E6E7E8] flex flex-col shrink-0 select-none">
+    
+    <!-- 1. 用户区域 (点击触发下拉菜单) -->
+    <div class="relative px-3 py-4 mb-2 user-menu-container">
+      <div 
+        @click="isMenuOpen = !isMenuOpen"
+        class="flex items-center gap-2 px-2 py-1.5 hover:bg-[#F0F1F2] rounded-md cursor-pointer transition-colors group"
+        :class="{ 'bg-[#F0F1F2]': isMenuOpen }"
+      >
+        <!-- 头像 -->
+        <div class="w-5 h-5 bg-[#5E6AD2] rounded text-[10px] font-bold text-white flex items-center justify-center shrink-0 shadow-sm shadow-indigo-200">
+          {{ username ? username.charAt(0).toUpperCase() : 'U' }}
+        </div>
+        <!-- 用户名 -->
+        <span class="text-sm font-semibold text-[#1D1D20] truncate flex-1">{{ username || 'User' }}</span>
+        <!-- 箭头图标 (随菜单状态旋转) -->
+        <svg 
+          class="w-3.5 h-3.5 text-[#9593A3] group-hover:text-[#1D1D20] transition-transform duration-200" 
+          :class="{ 'rotate-180': isMenuOpen }"
+          fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+        </svg>
+      </div>
+
+      <!-- 用户下拉菜单 (Linear 风格) -->
+      <transition name="menu">
+        <div v-if="isMenuOpen" class="absolute left-3 right-3 top-[calc(100%-8px)] mt-1 bg-white border border-[#E6E7E8] rounded-lg shadow-xl z-50 py-1 overflow-hidden animate-in fade-in zoom-in duration-100">
+          <button 
+            @click="handleLogout" 
+            class="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium text-[#67657F] hover:bg-red-50 hover:text-red-600 transition-colors"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Logout
+          </button>
+        </div>
+      </transition>
+    </div>
+
+    <!-- 2. 导航菜单 -->
+    <nav class="flex-1 px-3 space-y-0.5">
+      <!-- Projects -->
+      <div 
+        @click="$emit('changeTab', 'projects')"
+        class="flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-medium rounded-md cursor-pointer transition-all"
+        :class="activeTab === 'projects' ? 'bg-[#EBECEF] text-[#1D1D20]' : 'text-[#67657F] hover:bg-[#F0F1F2] hover:text-[#1D1D20]'"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        </svg>
+        Projects
+      </div>
+    </nav>
+
+    <!-- 3. 底部区域 (移除了 Logout 按钮，仅保留精致的边距) -->
+    <div class="p-4">
+       <!-- 可以在这里放版本号或帮助图标 -->
+    </div>
+  </aside>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue';
+
+defineProps<{ 
+  username: string; 
+  activeTab: string; 
+}>();
+
+const emit = defineEmits(['logout', 'changeTab']);
+
+const isMenuOpen = ref(false);
+
+const handleLogout = () => {
+  isMenuOpen.value = false;
+  emit('logout');
+};
+
+// 点击外部关闭菜单
+const closeMenu = (e: MouseEvent) => {
+  if (!(e.target as HTMLElement).closest('.user-menu-container')) {
+    isMenuOpen.value = false;
+  }
+};
+
+onMounted(() => window.addEventListener('click', closeMenu));
+onUnmounted(() => window.removeEventListener('click', closeMenu));
+</script>
+
+<style scoped>
+/* 下拉菜单动画 */
+.animate-in {
+  animation-duration: 0.15s;
+  animation-fill-mode: both;
+}
+
+@keyframes zoom-in {
+  from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.zoom-in { animation-name: zoom-in; }
+
+/* 侧边栏过渡 */
+.menu-enter-active, .menu-leave-active {
+  transition: all 0.1s ease-out;
+}
+.menu-enter-from, .menu-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+</style>
+</file>
+
 <file path="src/style.css">
 /* style.css */
 @tailwind base;
@@ -2098,6 +2116,7 @@ export default api;
                 ref="issueListRef"
                 @back="currentProject = null"
                 @edit="handleEditIssue"
+                @create="handleOpenCreateIssue"
               />
             </template>
 
