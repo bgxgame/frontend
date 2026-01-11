@@ -53,7 +53,6 @@ src/components/AuthPage.vue
 src/components/ConfirmModal.vue
 src/components/IssueList.vue
 src/components/IssueModal.vue
-src/components/PlanList.vue
 src/components/ProjectList.vue
 src/components/SearchPalette.vue
 src/components/Sidebar.vue
@@ -772,93 +771,13 @@ export default defineConfig({
 }
 </file>
 
-<file path="README.md">
-## 项目概述
-
-这是一个基于Vue 3 + TypeScript + Vite构建的前端项目，主要功能是个人计划管理系统。项目采用了Tailwind CSS作为样式框架，UI设计参考了Linear应用的风格，具有现代、简洁的界面。
-
-## 技术栈
-
-- **前端框架**: Vue 3 (使用Composition API)
-- **编程语言**: TypeScript
-- **构建工具**: Vite
-- **样式框架**: Tailwind CSS
-- **HTTP客户端**: Axios (用于API请求)
-- **日期处理**: date-fns
-
-## 项目结构
-
-```
-src/
-├── components/          # 可复用的Vue组件
-│   ├── LoginModal.vue  # 登录模态框
-│   ├── PlanList.vue    # 计划列表组件
-│   └── PlanModal.vue   # 计划编辑/创建模态框
-├── App.vue             # 主应用组件
-├── api.ts              # API请求封装
-├── main.ts             # 应用入口文件
-├── style.css           # 全局样式（Tailwind相关）
-└── types.ts            # TypeScript类型定义
-```
-
-## 主要功能
-
-1. **用户认证**：
-   - 管理员登录功能
-   - 基于Token的身份验证
-
-2. **计划管理**：
-   - 查看计划列表
-   - 创建新计划
-   - 编辑现有计划
-   - 删除计划
-   - 计划状态管理（待办、进行中、完成）
-
-3. **数据展示**：
-   - 按分类显示计划
-   - 显示截止日期
-   - 状态标签显示
-   - 公开/私有计划区分
-
-## UI设计特色
-
-项目采用Linear风格的UI设计，具有以下特点：
-
-1. **极简主义**：大量使用留白，界面清爽
-2. **柔和配色**：使用柔和的蓝色作为主色调
-3. **精致细节**：精细的边框、阴影和过渡效果
-4. **现代交互**：悬停效果、平滑过渡等
-
-## 代码特点
-
-1. **组件化设计**：功能模块化，易于维护
-2. **TypeScript支持**：类型安全，减少运行时错误
-3. **响应式设计**：适配不同屏幕尺寸
-4. **状态管理**：合理使用Vue的响应式系统
-
-## Tailwind CSS使用
-
-项目充分利用了Tailwind CSS的实用性优先的CSS框架特性：
-
-- 通过`@tailwind`指令引入基础样式
-- 使用`@apply`组合常用样式类
-- 自定义Linear风格的颜色主题
-
-## 开发配置
-
-- **开发服务器**: `npm run dev`
-- **构建生产版本**: `npm run build`
-- **预览生产版本**: `npm run preview`
-
-这个项目展示了现代前端开发的最佳实践，包括组件化、类型安全、响应式设计等，同时通过参考Linear的UI风格实现了美观的用户界面。
-</file>
-
 <file path="src/components/IssueList.vue">
 <!-- src/components/IssueList.vue -->
 <template>
   <div class="space-y-6">
-    <!-- 1. 顶部控制栏 -->
+    <!-- 1. 顶部控制栏：返回 + 项目名 + 操作区 -->
     <div class="flex items-center justify-between border-b border-[#E6E7E8] pb-4">
+      <!-- 左侧：返回与面包屑 -->
       <div class="flex items-center gap-4">
         <button 
           @click="$emit('back')" 
@@ -875,7 +794,9 @@ src/
         </div>
       </div>
 
+      <!-- 右侧：新建按钮与视图切换 -->
       <div class="flex items-center gap-3">
+        <!-- 核心操作：新建任务按钮 -->
         <button 
           @click="$emit('create')" 
           class="flex items-center gap-1.5 px-3 py-1.5 bg-[#5E6AD2] text-white text-[12px] font-bold rounded-md hover:bg-[#525BC2] transition-all shadow-sm shadow-indigo-100 active:scale-[0.98]"
@@ -886,33 +807,41 @@ src/
           New Issue
         </button>
 
+        <!-- 垂直分割线 -->
         <div class="w-px h-4 bg-[#E6E7E8] mx-1"></div>
 
+        <!-- 视图切换器 -->
         <div class="flex p-1 bg-[#F0F0F2] rounded-lg border border-[#E6E7E8]">
           <button @click="viewMode = 'list'" 
-            :class="['p-1.5 rounded-md transition-all', viewMode === 'list' ? 'bg-white shadow-sm text-[#5E6AD2]' : 'text-[#67657F]']">
+            :class="['p-1.5 rounded-md transition-all', viewMode === 'list' ? 'bg-white shadow-sm text-[#5E6AD2]' : 'text-[#67657F]']"
+            title="列表视图">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
           </button>
           <button @click="viewMode = 'kanban'" 
-            :class="['p-1.5 rounded-md transition-all', viewMode === 'kanban' ? 'bg-white shadow-sm text-[#5E6AD2]' : 'text-[#67657F]']">
+            :class="['p-1.5 rounded-md transition-all', viewMode === 'kanban' ? 'bg-white shadow-sm text-[#5E6AD2]' : 'text-[#67657F]']"
+            title="看板视图">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2m0 10V7" /></svg>
           </button>
         </div>
       </div>
     </div>
 
-    <!-- 2. 内容区 -->
+    <!-- 2. 内容加载状态 -->
     <div v-if="loading" class="flex justify-center py-32">
       <div class="w-8 h-8 border-2 border-[#5E6AD2] border-t-transparent rounded-full animate-spin"></div>
     </div>
 
     <div v-else-if="issues.length === 0" class="text-center py-32 bg-white rounded-xl border border-dashed border-[#E6E7E8]">
+      <div class="w-12 h-12 bg-[#FAFAFC] rounded-full flex items-center justify-center mx-auto mb-4 border border-[#F0F0F2]">
+        <svg class="w-6 h-6 text-[#D1D1D6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+      </div>
       <p class="text-[#67657F] text-sm font-medium">该项目下暂无任务</p>
       <button @click="$emit('create')" class="mt-4 text-[#5E6AD2] text-xs font-bold hover:underline">立即创建第一个任务</button>
     </div>
 
-    <!-- 2a. 列表模式 -->
+    <!-- 2a. 列表模式 (Table/List Style) -->
     <div v-else-if="viewMode === 'list'" class="bg-white rounded-xl border border-[#E6E7E8] overflow-hidden animate-in fade-in duration-300">
+      <!-- 表头 -->
       <div class="flex items-center px-4 py-2 border-b border-[#E6E7E8] text-[10px] font-bold text-[#9593A3] uppercase tracking-widest bg-[#FAFAFC]">
         <div class="flex-1">任务名称</div>
         <div class="w-32">状态</div>
@@ -921,11 +850,13 @@ src/
         <div class="w-10"></div>
       </div>
 
+      <!-- 数据行 -->
       <div class="divide-y divide-[#F0F0F2]">
         <div v-for="issue in issues" :key="issue.id"
           @click="$emit('edit', issue)"
           class="group flex items-center px-4 py-2.5 hover:bg-[#F4F4F5] transition-colors cursor-pointer text-[13px]"
         >
+          <!-- 1. 名称列 -->
           <div class="flex-1 flex items-center gap-3 min-w-0">
             <span :class="['shrink-0 w-2 h-2 rounded-full shadow-sm', statusPointColor(issue.status)]"></span>
             <span class="font-semibold text-[#1D1D20] truncate group-hover:text-[#5E6AD2] transition-colors">
@@ -933,42 +864,53 @@ src/
             </span>
           </div>
 
+          <!-- 2. 状态列 (Pill 标签) -->
           <div class="w-32 flex items-center">
             <span :class="['px-2 py-0.5 rounded text-[10px] font-black border uppercase tracking-tighter', statusTagClass(issue.status)]">
               {{ formatStatus(issue.status) }}
             </span>
           </div>
 
+          <!-- 3. 优先级列 -->
           <div class="w-24 flex justify-center">
-            <span v-if="issue.priority > 0" :class="['text-[10px] px-1.5 py-0.5 rounded font-black border shadow-sm', priorityClass(issue.priority)]">
+            <span v-if="issue.priority > 0" 
+              :class="['text-[10px] px-1.5 py-0.5 rounded font-black border shadow-sm', priorityClass(issue.priority)]">
               P{{ issue.priority }}
             </span>
             <span v-else class="text-[#D1D1D6]">—</span>
           </div>
 
+          <!-- 4. 截止日期列 -->
           <div class="w-32 text-right text-[#67657F] font-medium text-[12px]">
             {{ issue.due_date ? formatDate(issue.due_date) : '—' }}
           </div>
 
+          <!-- 5. 悬浮操作 -->
           <div class="w-10 flex justify-end">
-            <button @click.stop="confirmDelete(issue.id)" class="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-50 rounded text-red-500 transition-all">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            <button @click.stop="confirmDelete(issue.id)" 
+              class="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-50 rounded text-red-500 transition-all">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
             </button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 2b. 看板模式 -->
+    <!-- 2b. 看板模式 (居中布局) -->
     <div v-else class="overflow-x-auto pb-8 px-4 -mx-4 scrollbar-hide">
+      <!-- 容器居中关键类: w-fit mx-auto justify-center -->
       <div class="flex flex-row gap-6 w-fit mx-auto min-w-full justify-center">
         <div v-for="col in kanbanColumns" :key="col.id" class="flex-shrink-0 w-80 flex flex-col gap-4">
+          <!-- 列头部 -->
           <div class="flex items-center gap-2 px-2">
             <span :class="['w-2.5 h-2.5 rounded-full shadow-sm', statusPointColor(col.id)]"></span>
             <span class="text-[11px] font-black text-[#1D1D20] uppercase tracking-widest">{{ col.label }}</span>
             <span class="text-[10px] font-bold text-[#9593A3] bg-gray-100 px-2 py-0.5 rounded-full shadow-inner">{{ col.items.length }}</span>
           </div>
 
+          <!-- 拖拽区域 -->
           <draggable 
             v-model="col.items" 
             group="issues" 
@@ -982,7 +924,9 @@ src/
                 <div class="flex justify-between items-start mb-2">
                   <span v-if="element.priority > 0" :class="['text-[9px] px-1.5 py-0.5 rounded font-black border', priorityClass(element.priority)]">P{{ element.priority }}</span>
                 </div>
-                <h4 class="text-[14px] font-bold text-[#1D1D20] leading-snug mb-2 group-hover:text-[#5E6AD2] transition-colors line-clamp-2 text-left">{{ element.title }}</h4>
+                <h4 class="text-[14px] font-bold text-[#1D1D20] leading-snug mb-2 group-hover:text-[#5E6AD2] transition-colors line-clamp-2 text-left">
+                  {{ element.title }}
+                </h4>
                 <div v-if="element.due_date" class="text-[10px] text-[#9593A3] font-semibold flex items-center">
                   <svg class="w-3 h-3 mr-1 text-[#D1D1D6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                   {{ formatDate(element.due_date) }}
@@ -994,7 +938,14 @@ src/
       </div>
     </div>
 
-    <ConfirmModal :isOpen="isConfirmOpen" title="删除任务" message="确定要永久删除此任务吗？此操作不可撤销。" @confirm="executeDelete" @cancel="isConfirmOpen = false" />
+    <!-- 确认删除弹窗 -->
+    <ConfirmModal 
+      :isOpen="isConfirmOpen"
+      title="删除任务"
+      message="确定要永久删除此任务吗？此操作不可撤销。"
+      @confirm="executeDelete"
+      @cancel="isConfirmOpen = false"
+    />
   </div>
 </template>
 
@@ -1006,7 +957,18 @@ import type { Issue } from '../types';
 import { toastStore } from '../toast';
 import ConfirmModal from './ConfirmModal.vue';
 
-const props = defineProps<{ projectId: number; projectName: string; }>();
+// 定义看板列接口，增强类型安全
+interface KanbanColumn {
+  id: string;
+  label: string;
+  items: Issue[];
+}
+
+const props = defineProps<{
+  projectId: number;
+  projectName: string;
+}>();
+
 const emit = defineEmits(['back', 'edit', 'create']);
 
 const issues = ref<Issue[]>([]);
@@ -1015,31 +977,42 @@ const viewMode = ref<'list' | 'kanban'>('list');
 const isConfirmOpen = ref(false);
 const issueIdToDelete = ref<number | null>(null);
 
-const kanbanColumns = reactive([
-  { id: 'todo', label: '待办 (Todo)', items: [] as Issue[] },
-  { id: 'in_progress', label: '进行中 (Started)', items: [] as Issue[] },
-  { id: 'done', label: '已完成 (Done)', items: [] as Issue[] }
+// 使用显式类型定义 reactive
+const kanbanColumns = reactive<KanbanColumn[]>([
+  { id: 'todo', label: '待办 (Todo)', items: [] },
+  { id: 'in_progress', label: '进行中 (Started)', items: [] },
+  { id: 'done', label: '已完成 (Done)', items: [] }
 ]);
 
-// 1. 修改 fetchIssues：支持静默更新 (不显示全屏 loading)
+// 1. 获取任务数据：支持静默更新，不显示全屏 loading
 const fetchIssues = async (silent = false) => {
   if (!silent) loading.value = true;
   try {
     const res = await api.get<Issue[]>(`/projects/${props.projectId}/issues`);
     issues.value = res.data;
 
-    // 同步更新看板列数据
-    kanbanColumns[0].items = issues.value.filter(i => i.status === 'todo' || i.status === 'backlog');
-    kanbanColumns[1].items = issues.value.filter(i => i.status === 'in_progress');
-    kanbanColumns[2].items = issues.value.filter(i => i.status === 'done');
+    // TypeScript 修复点：使用 find 安全定位列，避免索引访问的 undefined 风险
+    const todoCol = kanbanColumns.find(c => c.id === 'todo');
+    const inProgressCol = kanbanColumns.find(c => c.id === 'in_progress');
+    const doneCol = kanbanColumns.find(c => c.id === 'done');
+
+    if (todoCol) {
+      todoCol.items = issues.value.filter(i => i.status === 'todo' || i.status === 'backlog');
+    }
+    if (inProgressCol) {
+      inProgressCol.items = issues.value.filter(i => i.status === 'in_progress');
+    }
+    if (doneCol) {
+      doneCol.items = issues.value.filter(i => i.status === 'done');
+    }
   } catch (err) {
-    console.error(err);
+    console.error("加载 Issues 失败:", err);
   } finally {
     if (!silent) loading.value = false;
   }
 };
 
-// 2. 修改 handleDragChange：成功后触发静默同步
+// 2. 处理拖拽：成功后触发静默刷新，确保切换视图时状态同步
 const handleDragChange = async (event: any, newStatus: string) => {
   if (event.added) {
     const issue = event.added.element;
@@ -1047,11 +1020,10 @@ const handleDragChange = async (event: any, newStatus: string) => {
       await api.patch(`/issues/${issue.id}`, { status: newStatus });
       toastStore.show(`已更新为 ${formatStatus(newStatus)}`, 'info', 1000);
       
-      // 关键：拖拽结束后同步全局 issues 数据，这样切换到列表视图时状态就是对的
+      // 关键：拖拽结束后静默同步全局 issues 数据
       await fetchIssues(true); 
     } catch (err) {
-      // 失败则强制刷新回滚
-      fetchIssues(); 
+      fetchIssues(); // 失败回滚
     }
   }
 };
@@ -1069,34 +1041,71 @@ const executeDelete = async () => {
   }
 };
 
-const formatStatus = (s: string) => ({ todo: 'Todo', in_progress: 'Started', done: 'Done', backlog: 'Backlog', canceled: 'Canceled' }[s] || s);
-const statusPointColor = (s: string) => s === 'done' ? 'bg-emerald-500' : s === 'in_progress' ? 'bg-amber-500' : s === 'todo' ? 'bg-blue-500' : 'bg-gray-400';
-const statusTagClass = (s: string) => s === 'done' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : s === 'in_progress' ? 'bg-amber-50 text-amber-600 border-amber-100' : s === 'todo' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-gray-50 text-gray-500 border-gray-100';
-const priorityClass = (p: number) => p >= 3 ? 'bg-red-50 text-red-600 border-red-100' : p === 2 ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-blue-50 text-blue-600 border-blue-100';
-const formatDate = (d: string) => new Date(d).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+// --- 辅助工具函数 ---
 
+const formatStatus = (s: string) => {
+  const map: Record<string, string> = {
+    'todo': 'Todo', 'in_progress': 'Started', 'done': 'Done', 
+    'backlog': 'Backlog', 'canceled': 'Canceled'
+  };
+  return map[s] || s;
+};
+
+const statusPointColor = (s: string) => {
+  if (s === 'done') return 'bg-emerald-500';
+  if (s === 'in_progress') return 'bg-amber-500';
+  if (s === 'todo') return 'bg-blue-500';
+  return 'bg-gray-400';
+};
+
+const statusTagClass = (s: string) => {
+  if (s === 'done') return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+  if (s === 'in_progress') return 'bg-amber-50 text-amber-600 border-amber-100';
+  if (s === 'todo') return 'bg-blue-50 text-blue-600 border-blue-100';
+  return 'bg-gray-50 text-gray-500 border-gray-100';
+};
+
+const priorityClass = (p: number) => {
+  if (p >= 3) return 'bg-red-50 text-red-600 border-red-100';
+  if (p === 2) return 'bg-amber-50 text-amber-600 border-amber-100';
+  return 'bg-blue-50 text-blue-600 border-blue-100';
+};
+
+const formatDate = (d: string) => {
+  return new Date(d).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+};
+
+// 监听项目ID变化
 watch(() => props.projectId, () => fetchIssues());
+
 onMounted(fetchIssues);
+
 defineExpose({ fetchIssues });
 </script>
+
+<style scoped>
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.line-clamp-2 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+
+/* 进场动画 */
+.animate-in { animation: fade-in 0.3s ease-out; }
+@keyframes fade-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+</style>
 </file>
 
 <file path="src/components/IssueModal.vue">
 <!-- src/components/IssueModal.vue -->
 <template>
   <div v-if="isOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-4">
-    <!-- 遮罩层 -->
     <div class="absolute inset-0 bg-slate-900/20 backdrop-blur-[2px]" @click="handleCancel"></div>
 
-    <!-- 详情面板主体 -->
     <div class="relative bg-white w-full max-w-[1200px] h-full md:h-[90vh] rounded-none md:rounded-xl shadow-2xl border border-[#E6E7E8] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
       
-      <!-- 1. 头部工具栏 -->
       <header class="h-12 border-b border-[#F0F0F2] flex items-center justify-between px-4 shrink-0 bg-white">
         <div class="flex items-center gap-3 text-[13px] text-[#67657F] min-w-0">
           <span class="hover:text-[#1D1D20] cursor-pointer shrink-0">Workspace</span>
           <span class="text-[#D1D1D6] shrink-0">/</span>
-          <!-- 顶部显示 Issue 标题 -->
           <span class="font-medium text-[#1D1D20] truncate">
             {{ isEditMode ? (form.title || 'Untitled Issue') : 'New Issue' }}
           </span>
@@ -1109,11 +1118,8 @@ defineExpose({ fetchIssues });
       </header>
 
       <div class="flex-1 flex overflow-hidden">
-        <!-- 2. 左侧：主体内容区 (含描述与评论) -->
         <main class="flex-1 overflow-y-auto custom-scrollbar p-8 md:p-12 bg-white">
           <div class="max-w-[800px] mx-auto space-y-8">
-            
-            <!-- 标题编辑 -->
             <textarea 
               ref="titleRef"
               v-model="form.title" 
@@ -1123,20 +1129,15 @@ defineExpose({ fetchIssues });
               @input="autoGrow"
             ></textarea>
 
-            <!-- 描述编辑 -->
             <textarea 
               v-model="form.description" 
               placeholder="添加详细描述..."
               class="w-full min-h-[150px] text-[15px] border-none outline-none resize-none placeholder:text-[#D1D1D6] focus:ring-0 p-0 leading-relaxed text-[#1D1D20]"
             ></textarea>
 
-            <!-- 活动与评论区 (仅在编辑模式显示) -->
             <section v-if="isEditMode" class="pt-10 border-t border-[#F0F0F2] space-y-8">
               <h3 class="text-sm font-bold text-[#1D1D20] tracking-tight">Activity</h3>
-              
-              <!-- 动态活动流 -->
               <div class="space-y-6">
-                <!-- 初始创建记录 -->
                 <div class="flex items-start gap-3">
                   <div class="w-6 h-6 bg-[#5E6AD2] rounded-full flex items-center justify-center text-[10px] text-white font-bold shadow-sm shrink-0">U</div>
                   <div class="text-[13px] text-[#67657F] mt-0.5">
@@ -1146,10 +1147,8 @@ defineExpose({ fetchIssues });
                   </div>
                 </div>
 
-                <!-- 循环渲染评论列表 -->
                 <div v-for="comment in comments" :key="comment.id" 
                   class="flex items-start gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                  <!-- 头像缩写 -->
                   <div class="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-[10px] text-[#67657F] font-bold shrink-0">
                     {{ comment.username.charAt(0).toUpperCase() }}
                   </div>
@@ -1158,20 +1157,17 @@ defineExpose({ fetchIssues });
                       <span class="text-[13px] font-bold text-[#1D1D20]">{{ comment.username }}</span>
                       <span class="text-[11px] text-[#9593A3]">{{ formatFullTime(comment.created_at) }}</span>
                     </div>
-                    <!-- 评论内容卡片 -->
                     <div class="text-[14px] text-[#1D1D20] leading-relaxed whitespace-pre-wrap bg-[#FAFAFC] p-3 rounded-lg border border-[#F0F0F2] shadow-sm">
                       {{ comment.content }}
                     </div>
                   </div>
                 </div>
 
-                <!-- 加载状态 -->
                 <div v-if="commentLoading" class="flex justify-center py-4">
                   <div class="w-4 h-4 border-2 border-[#5E6AD2] border-t-transparent rounded-full animate-spin"></div>
                 </div>
               </div>
 
-              <!-- 评论输入框 -->
               <div class="mt-8 relative border border-[#E6E7E8] rounded-xl focus-within:border-[#5E6AD2] focus-within:ring-4 focus-within:ring-[#5E6AD2]/5 transition-all overflow-hidden bg-white shadow-sm">
                 <textarea 
                   v-model="commentText"
@@ -1179,14 +1175,11 @@ defineExpose({ fetchIssues });
                   class="w-full p-4 text-[14px] border-none outline-none focus:ring-0 resize-none min-h-[100px]"
                 ></textarea>
                 <div class="flex justify-between items-center px-4 py-2 bg-[#FAFAFC] border-t border-[#F0F0F2]">
-                  <div class="flex gap-2">
-                    <button class="text-[#9593A3] hover:text-[#1D1D20] transition-colors p-1">
-                    </button>
-                  </div>
+                  <div class="flex gap-2"></div>
                   <button 
                     @click="handlePostComment"
                     :disabled="!commentText.trim() || postingComment"
-                    class="bg-[#5E6AD2] text-white px-4 py-1.5 rounded-md text-[12px] font-bold hover:bg-[#525BC2] disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                    class="bg-[#5E6AD2] text-white px-4 py-1.5 rounded-md text-[12px] font-bold hover:bg-[#525BC2] disabled:opacity-40 transition-all flex items-center gap-2"
                   >
                     <span v-if="postingComment" class="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                     Comment
@@ -1197,18 +1190,13 @@ defineExpose({ fetchIssues });
           </div>
         </main>
 
-        <!-- 3. 右侧：属性侧边栏 -->
         <aside class="w-[280px] border-l border-[#F0F0F2] bg-[#FAFAFC]/50 overflow-y-auto p-6 hidden lg:block space-y-8">
           <div>
             <h4 class="text-[11px] font-bold text-[#9593A3] uppercase tracking-wider mb-4">Properties</h4>
-            
             <div class="space-y-1">
-              <!-- Status 下拉 -->
               <div class="relative menu-container">
-                <div 
-                  @click.stop="activeMenu = activeMenu === 'status' ? null : 'status'"
-                  class="flex items-center justify-between px-2 py-1.5 hover:bg-[#F0F1F2] rounded-md transition-colors cursor-pointer group"
-                >
+                <div @click.stop="activeMenu = activeMenu === 'status' ? null : 'status'"
+                  class="flex items-center justify-between px-2 py-1.5 hover:bg-[#F0F1F2] rounded-md transition-colors cursor-pointer group">
                   <span class="text-[13px] text-[#67657F]">Status</span>
                   <div class="flex items-center gap-2">
                     <span :class="['w-2 h-2 rounded-full', statusPointColor(form.status)]"></span>
@@ -1216,50 +1204,35 @@ defineExpose({ fetchIssues });
                   </div>
                 </div>
                 <div v-if="activeMenu === 'status'" class="absolute right-0 top-full mt-1 w-44 bg-white border border-[#E6E7E8] rounded-lg shadow-xl z-[110] py-1 animate-in fade-in zoom-in duration-100">
-                  <div 
-                    v-for="s in ['backlog', 'todo', 'in_progress', 'done', 'canceled']" :key="s"
-                    @click="form.status = s; activeMenu = null"
-                    class="flex items-center gap-2 px-3 py-1.5 hover:bg-[#F4F4F5] cursor-pointer"
-                  >
+                  <div v-for="s in ['backlog', 'todo', 'in_progress', 'done', 'canceled']" :key="s"
+                    @click="form.status = s; activeMenu = null" class="flex items-center gap-2 px-3 py-1.5 hover:bg-[#F4F4F5] cursor-pointer">
                     <span :class="['w-2 h-2 rounded-full', statusPointColor(s)]"></span>
                     <span class="text-[13px] text-[#1D1D20] capitalize">{{ formatStatus(s) }}</span>
                   </div>
                 </div>
               </div>
 
-              <!-- Priority 下拉 -->
               <div class="relative menu-container">
-                <div 
-                  @click.stop="activeMenu = activeMenu === 'priority' ? null : 'priority'"
-                  class="flex items-center justify-between px-2 py-1.5 hover:bg-[#F0F1F2] rounded-md transition-colors cursor-pointer group"
-                >
+                <div @click.stop="activeMenu = activeMenu === 'priority' ? null : 'priority'"
+                  class="flex items-center justify-between px-2 py-1.5 hover:bg-[#F0F1F2] rounded-md transition-colors cursor-pointer group">
                   <span class="text-[13px] text-[#67657F]">Priority</span>
                   <span class="text-[13px] font-semibold text-[#1D1D20]">{{ formatPriority(form.priority) }}</span>
                 </div>
                 <div v-if="activeMenu === 'priority'" class="absolute right-0 top-full mt-1 w-44 bg-white border border-[#E6E7E8] rounded-lg shadow-xl z-[110] py-1 animate-in fade-in zoom-in duration-100">
-                  <div 
-                    v-for="p in [0, 1, 2, 3, 4]" :key="p"
-                    @click="form.priority = p; activeMenu = null"
-                    class="px-3 py-1.5 hover:bg-[#F4F4F5] cursor-pointer text-[13px] text-[#1D1D20]"
-                  >
+                  <div v-for="p in [0, 1, 2, 3, 4]" :key="p" @click="form.priority = p; activeMenu = null"
+                    class="px-3 py-1.5 hover:bg-[#F4F4F5] cursor-pointer text-[13px] text-[#1D1D20]">
                     {{ formatPriority(p) }}
                   </div>
                 </div>
               </div>
 
-              <!-- Due Date -->
               <div class="flex items-center justify-between px-2 py-1.5 hover:bg-[#F0F1F2] rounded-md transition-colors">
                 <span class="text-[13px] text-[#67657F]">Due Date</span>
-                <input 
-                  type="date" 
-                  v-model="form.due_date"
-                  class="bg-transparent border-none text-[12px] font-semibold p-0 focus:ring-0 cursor-pointer text-right w-32 text-[#1D1D20]"
-                />
+                <input type="date" v-model="form.due_date" class="bg-transparent border-none text-[12px] font-semibold p-0 focus:ring-0 cursor-pointer text-right w-32 text-[#1D1D20]" />
               </div>
             </div>
           </div>
 
-          <!-- Project 信息卡片 -->
           <div>
             <h4 class="text-[11px] font-bold text-[#9593A3] uppercase tracking-wider mb-3">Project</h4>
             <div class="flex items-center gap-2 px-3 py-2 bg-white border border-[#E6E7E8] rounded-lg shadow-sm">
@@ -1272,14 +1245,10 @@ defineExpose({ fetchIssues });
         </aside>
       </div>
 
-      <!-- 4. 底部操作栏 -->
       <footer class="p-4 border-t border-[#F0F0F2] flex justify-end gap-3 bg-white shrink-0">
         <button @click="handleCancel" class="px-4 py-2 text-xs font-bold text-[#67657F] hover:bg-gray-100 rounded-md transition-all">取消</button>
-        <button 
-          @click="handleSubmit" 
-          :disabled="loading || !form.title.trim()"
-          class="px-5 py-2 text-xs font-bold text-white bg-[#5E6AD2] rounded-md hover:bg-[#525BC2] shadow-md shadow-indigo-100 transition-all flex items-center gap-2"
-        >
+        <button @click="handleSubmit" :disabled="loading || !form.title.trim()"
+          class="px-5 py-2 text-xs font-bold text-white bg-[#5E6AD2] rounded-md hover:bg-[#525BC2] shadow-md transition-all flex items-center gap-2">
           <span v-if="loading" class="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
           {{ isEditMode ? '更新任务' : '创建任务' }}
         </button>
@@ -1291,19 +1260,19 @@ defineExpose({ fetchIssues });
 <script setup lang="ts">
 import { ref, watch, computed, nextTick, onMounted, onUnmounted } from 'vue';
 import api from '../api';
-import type { Issue, Comment } from '../types'; // 确保 types.ts 中定义了 Comment
+import type { Issue, Comment } from '../types';
 import { toastStore } from '../toast';
 
+// 修复点：将 projectName 设置为可选 (?)
 const props = defineProps<{
   isOpen: boolean;
   editData?: Issue | null;
   defaultProjectId?: number;
-  projectName?: string;
+  projectName?: string; 
 }>();
 
 const emit = defineEmits(['close', 'saved']);
 
-// --- 状态管理 ---
 const loading = ref(false);
 const commentLoading = ref(false);
 const postingComment = ref(false);
@@ -1325,66 +1294,48 @@ const getInitialForm = () => ({
 const form = ref<any>(getInitialForm());
 const isEditMode = computed(() => !!props.editData);
 
-// --- 接口调用 ---
-
-// 获取评论列表
 const fetchComments = async (issueId: number) => {
   commentLoading.value = true;
   try {
     const res = await api.get<Comment[]>(`/issues/${issueId}/comments`);
     comments.value = res.data;
   } catch (err) {
-    console.error("加载评论失败", err);
+    console.error(err);
   } finally {
     commentLoading.value = false;
   }
 };
 
-// 发表评论
 const handlePostComment = async () => {
   if (!commentText.value.trim() || !props.editData) return;
-  
   postingComment.value = true;
   try {
-    const res = await api.post<Comment>(`/issues/${props.editData.id}/comments`, {
-      content: commentText.value
-    });
-    // 即时插入新评论到列表末尾
+    const res = await api.post<Comment>(`/issues/${props.editData.id}/comments`, { content: commentText.value });
     comments.value.push(res.data);
     commentText.value = '';
     toastStore.show('评论已发表');
   } catch (err) {
-    console.error("发表失败", err);
+    console.error(err);
   } finally {
     postingComment.value = false;
   }
 };
 
-// --- 逻辑监听 ---
-
 watch(() => props.isOpen, async (newVal) => {
   if (newVal) {
     if (props.editData) {
-      // 编辑模式
-      form.value = { 
-        ...props.editData,
-        due_date: props.editData.due_date ? String(props.editData.due_date).split('T')[0] : ''
-      };
-      fetchComments(props.editData.id); // 加载评论
+      form.value = { ...props.editData, due_date: props.editData.due_date ? String(props.editData.due_date).split('T')[0] : '' };
+      fetchComments(props.editData.id);
     } else {
-      // 新建模式
       form.value = getInitialForm();
       comments.value = [];
     }
     commentText.value = '';
     activeMenu.value = null;
-
     await nextTick();
     if (titleRef.value) autoGrow({ target: titleRef.value });
   }
 });
-
-// --- 工具函数 ---
 
 const autoGrow = (e: any) => {
   const el = e.target;
@@ -1395,12 +1346,7 @@ const autoGrow = (e: any) => {
 const formatFullTime = (dateStr?: string) => {
   if (!dateStr) return 'Just now';
   const date = new Date(dateStr);
-  return date.toLocaleString('zh-CN', { 
-    month: 'short', 
-    day: 'numeric', 
-    hour: '2-digit', 
-    minute: '2-digit' 
-  });
+  return date.toLocaleString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
 
 const formatStatus = (s: string) => {
@@ -1424,10 +1370,7 @@ const formatPriority = (p: number) => {
   return map[p] || 'No priority';
 };
 
-const handleCancel = () => {
-  if (loading.value) return;
-  emit('close');
-};
+const handleCancel = () => { if (!loading.value) emit('close'); };
 
 const handleSubmit = async () => {
   if (!form.value.title.trim()) return;
@@ -1435,15 +1378,13 @@ const handleSubmit = async () => {
   try {
     let formattedDate = null;
     if (form.value.due_date) formattedDate = new Date(form.value.due_date).toISOString();
-    
     const payload = { ...form.value, due_date: formattedDate };
-
     if (isEditMode.value) {
       await api.patch(`/issues/${form.value.id}`, payload);
-      toastStore.show('任务已成功更新');
+      toastStore.show('任务已更新');
     } else {
       await api.post('/issues', payload);
-      toastStore.show('新任务已创建');
+      toastStore.show('任务已创建');
     }
     emit('saved');
     emit('close');
@@ -1455,9 +1396,7 @@ const handleSubmit = async () => {
 };
 
 const handleOutsideClick = (e: MouseEvent) => {
-  if (!(e.target as HTMLElement).closest('.menu-container')) {
-    activeMenu.value = null;
-  }
+  if (!(e.target as HTMLElement).closest('.menu-container')) activeMenu.value = null;
 };
 
 onMounted(() => window.addEventListener('click', handleOutsideClick));
@@ -1467,14 +1406,8 @@ onUnmounted(() => window.removeEventListener('click', handleOutsideClick));
 <style scoped>
 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #E6E7E8; border-radius: 10px; }
-
 textarea { scrollbar-width: none; }
 textarea::-webkit-scrollbar { display: none; }
-textarea::placeholder { color: #D1D1D6; }
-
-.animate-in { animation-duration: 0.2s; animation-fill-mode: both; }
-@keyframes slide-in-bottom { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-.slide-in-from-bottom-2 { animation-name: slide-in-bottom; }
 </style>
 </file>
 
@@ -1867,6 +1800,126 @@ input:focus, textarea:focus, select:focus {
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
+</file>
+
+<file path="README.md">
+# 项目总结
+
+## 1. 项目概述
+这是一个基于Vue 3 + TypeScript + Vite构建的前端项目，名为LifePlan，是一个个人计划管理系统。项目采用了Tailwind CSS作为样式框架，UI设计参考了Linear应用的风格，具有现代、简洁的界面。
+
+## 2. 技术栈
+- **前端框架**: Vue 3 (使用Composition API)
+- **编程语言**: TypeScript 5.9+
+- **构建工具**: Vite 7.2
+- **样式方案**: Tailwind CSS 3.4 + PostCSS + Autoprefixer
+- **核心依赖**: 
+  - `Axios`: API请求处理
+  - `date-fns`: 日期处理
+  - `@heroicons/vue`: 图标库
+  - `vuedraggable`: 拖拽功能支持
+  - `marked`: Markdown解析
+
+## 3. 项目架构与设计特点
+
+### 架构特点:
+- **组件化设计**: 采用高度模块化的组件设计（如LoginModal, PlanList等）
+- **TypeScript类型安全**: 全面使用TypeScript确保类型安全
+- **响应式布局**: 适配多端设备的响应式设计
+- **Linear风格UI**: 极简主义 + 柔和蓝调色 + 精致动效
+
+### 代码组织:
+- 功能模块集中在`src/components/`目录下
+- 项目入口文件为`src/App.vue`
+- API请求封装在`src/api.ts`
+- 类型定义位于`src/types.ts`
+
+## 4. 主要功能模块
+
+### 用户认证系统:
+- 管理员登录/注册功能
+- 基于Token的身份验证
+- 无感Token刷新机制（包含Access Token和Refresh Token）
+
+### 项目管理:
+- 项目列表展示
+- 创建新项目
+- 编辑/删除现有项目
+- 项目状态管理（active, completed, backlog, paused, canceled）
+
+### 任务管理:
+- 任务列表展示
+- 创建/编辑任务
+- 任务状态管理（backlog, todo, in_progress, done, canceled）
+- 优先级设置（0-4级）
+- 截止日期管理
+- 任务拖拽排序（看板模式）
+
+### 交互功能:
+- 全局搜索功能（支持项目和任务混合搜索）
+- 两种视图模式（列表模式和看板模式）
+- 拖拽功能（支持任务在不同状态间拖拽）
+- Toast消息提示系统
+
+## 5. API设计与后端集成
+- API基础URL: `http://127.0.0.1:3000/api`
+- 包含完整的CRUD操作（创建、读取、更新、删除）
+- 采用RESTful API设计
+- 包含复杂的无感刷新逻辑处理认证问题
+
+## 6. 核心组件分析
+
+### App.vue (主应用组件):
+- 控制登录/登出状态
+- 负责路由导航和状态管理
+- 集成全局搜索功能
+- 管理主要页面组件
+
+### AuthPage.vue (认证组件):
+- 提供登录/注册界面
+- 实现表单验证
+- 处理认证流程
+
+### ProjectList.vue (项目列表组件):
+- 展示项目网格
+- 支持项目创建和删除
+- 提供项目选择功能
+
+### IssueList.vue (任务列表组件):
+- 提供列表和看板两种视图
+- 支持任务拖拽排序
+- 实现任务状态管理
+
+## 7. 特殊功能亮点
+
+### 无感Token刷新机制:
+- 自动检测401错误
+- 队列管理待处理请求
+- 自动刷新Token并重新发送请求
+
+### 拖拽功能:
+- 使用vuedraggable实现任务拖拽
+- 在不同状态列之间移动任务
+- 实时更新后端数据
+
+### 全局搜索:
+- 支持项目和任务混合搜索
+- 快捷键支持（Tab+Tab或Ctrl+K）
+
+### 响应式设计:
+- 适配不同屏幕尺寸
+- 移动端友好的界面设计
+
+## 8. 开发配置
+- **开发服务器**: `npm run dev`
+- **构建生产版本**: `npm run build`
+- **预览生产版本**: `npm run preview`
+
+## 9. UI设计特色
+- **极简主义**: 大量使用留白，界面清爽
+- **柔和配色**: 使用柔和的蓝色作为主色调(#5E6AD2)
+- **精致细节**: 精细的边框、阴影和过渡效果
+- **现代交互**: 悬停效果、平滑过渡等
 </file>
 
 <file path="src/types.ts">
@@ -2296,303 +2349,6 @@ body { margin: 0; overflow: hidden; }
 .fade-in { animation-name: fade-in; }
 @keyframes slide-in-bottom { from { transform: translateY(10px); } to { transform: translateY(0); } }
 .slide-in-from-bottom-4 { animation-name: slide-in-bottom; }
-</style>
-</file>
-
-<file path="src/components/PlanList.vue">
-<!-- src/components/PlanList.vue -->
-<template>
-  <div class="space-y-6">
-    <!-- 1. 筛选与视图切换栏 (移除了之前的标题/标语区) -->
-    <div class="flex items-center justify-between">
-      <!-- 左侧：状态过滤器 (列表模式专用) -->
-      <div class="flex items-center gap-3">
-        <div v-if="viewMode === 'list'" class="flex p-1 bg-[#F0F0F2] rounded-lg border border-[#E6E7E8]">
-          <button
-            v-for="s in [{ id: 'all', label: '全部' }, { id: 'pending', label: '待办' }, { id: 'in_progress', label: '进行中' }, { id: 'completed', label: '已完成' }]"
-            :key="s.id" @click="setStatusFilter(s.id)"
-            :class="['px-4 py-1.5 text-[11px] font-bold rounded-md transition-all uppercase tracking-tight', activeStatus === s.id ? 'bg-white shadow-sm text-[#5E6AD2]' : 'text-[#67657F] hover:text-[#1D1D20]']">
-            {{ s.label }}
-          </button>
-        </div>
-        <!-- 非列表模式或作为备用，可以在这里放其他控制项 -->
-      </div>
-
-      <!-- 右侧：视图切换器 (列表/看板) -->
-      <div class="flex p-1 bg-[#F0F0F2] rounded-lg border border-[#E6E7E8]">
-        <button @click="viewMode = 'list'"
-          :class="['p-2 rounded-md transition-all', viewMode === 'list' ? 'bg-white shadow-sm text-[#5E6AD2]' : 'text-[#67657F]']"
-          title="列表视图">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-          </svg>
-        </button>
-        <button @click="viewMode = 'kanban'"
-          :class="['p-2 rounded-md transition-all', viewMode === 'kanban' ? 'bg-white shadow-sm text-[#5E6AD2]' : 'text-[#67657F]']"
-          title="看板视图">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2m0 10V7">
-            </path>
-          </svg>
-        </button>
-      </div>
-    </div>
-
-    <!-- 2. 内容展示区 -->
-    <!-- 加载中 -->
-    <div v-if="loading" class="flex flex-col items-center justify-center py-32">
-      <div class="w-10 h-10 border-2 border-[#5E6AD2] border-t-white/20 border-t-transparent rounded-full animate-spin">
-      </div>
-    </div>
-
-    <!-- 空状态 -->
-    <div v-else-if="plans.length === 0"
-      class="text-center py-32 bg-white rounded-xl border border-dashed border-[#E6E7E8]">
-      <div class="mb-4 text-[#D1D1D6]">
-        <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
-          </path>
-        </svg>
-      </div>
-      <p class="text-[#67657F] text-sm font-medium">当前分类下暂无任务</p>
-      <button @click="resetFilters" class="mt-4 text-[#5E6AD2] text-xs font-bold hover:underline">显示全部计划</button>
-    </div>
-
-    <!-- 列表模式 -->
-    <div v-else-if="viewMode === 'list'"
-      class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 animate-in fade-in duration-300">
-      <div v-for="plan in plans" :key="plan.id"
-        class="bg-white rounded-xl border border-[#E6E7E8] shadow-sm transition-all hover:shadow-md hover:border-[#D1D1D6] p-6 group relative">
-        <div :class="['absolute left-0 top-0 bottom-0 w-1.5 rounded-full opacity-40', statusColor(plan.status)]"></div>
-        <div class="flex justify-between items-start mb-4">
-          <div class="flex gap-2">
-            <span
-              class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-[#FAFAFC] text-[#67657F] border border-[#E6E7E8]">{{
-                plan.category || '未分类' }}</span>
-            <span v-if="plan.priority > 0"
-              :class="['text-[10px] px-2 py-0.5 rounded font-black border', priorityClass(plan.priority)]">P{{
-                plan.priority }}</span>
-          </div>
-          <div v-if="isLoggedIn" class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button @click="$emit('edit', plan)"
-              class="p-1.5 hover:bg-gray-100 rounded-md text-[#67657F] hover:text-[#5E6AD2] transition-colors">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-            </button>
-            <button @click="deletePlan(plan.id)"
-              class="p-1.5 hover:bg-red-50 rounded-md text-red-500 transition-colors">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-            </button>
-          </div>
-        </div>
-        <h3 class="font-bold text-[#1D1D20] text-[16px] mb-2 group-hover:text-[#5E6AD2] transition-colors line-clamp-1">
-          {{ plan.title }}</h3>
-
-        <div
-          class="text-[#67657F] text-[13px] mt-2 line-clamp-2 leading-relaxed mb-6 h-10 prose prose-sm prose-slate max-w-none overflow-hidden"
-          v-html="renderMarkdown(plan.description)"></div>
-
-        <div class="pt-4 border-t border-[#F0F0F2] flex justify-between items-center text-[11px] text-[#9593A3]">
-          <span class="flex items-center"><svg class="w-3.5 h-3.5 mr-1.5 text-[#D1D1D6]" fill="none"
-              stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-            </svg>{{ formatDate(plan.due_date) }}</span>
-          <span
-            :class="['px-2.5 py-1 rounded-md font-bold uppercase tracking-widest border text-[10px]', statusBgColor(plan.status)]">{{
-              formatStatus(plan.status) }}</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- 看板模式 -->
-    <div v-else class="overflow-x-auto pb-8 px-8 -mx-8 scrollbar-hide animate-in slide-in-from-right-4 duration-300">
-      <div class="flex flex-row gap-6 w-fit mx-auto min-w-full lg:min-w-0 md:justify-center">
-        <div v-for="col in kanbanColumns" :key="col.id" class="flex-shrink-0 w-80 lg:w-[350px] flex flex-col gap-4">
-          <div class="flex items-center justify-between px-2">
-            <div class="flex items-center gap-2">
-              <span :class="['w-2.5 h-2.5 rounded-full', statusPointColor(col.id)]"></span>
-              <span class="text-[11px] font-black text-[#1D1D20] uppercase tracking-widest">{{ col.label }}</span>
-              <span class="text-[10px] font-bold text-[#9593A3] bg-gray-100 px-2.5 py-0.5 rounded-full shadow-sm">{{
-                col.items.length }}</span>
-            </div>
-          </div>
-
-          <draggable v-model="col.items" group="plans" item-key="id"
-            class="flex flex-col gap-3 min-h-[600px] p-3 bg-[#F7F7F8]/70 rounded-2xl border border-transparent hover:border-[#E6E7E8] transition-colors"
-            ghost-class="opacity-40" drag-class="rotate-1" @change="(e: any) => handleDragChange(e, col.id)">
-            <template #item="{ element }">
-              <div @click="$emit('edit', element)"
-                class="bg-white rounded-xl border border-[#E6E7E8] p-5 shadow-sm hover:shadow-md hover:border-[#D1D1D6] transition-all cursor-grab active:cursor-grabbing group select-none">
-                <div class="flex justify-between items-start mb-3">
-                  <span v-if="element.priority > 0"
-                    :class="['text-[9px] px-1.5 py-0.5 rounded font-black border', priorityClass(element.priority)]">P{{
-                    element.priority }}</span>
-                  <span class="text-[10px] font-medium text-[#9593A3] tracking-tight uppercase">{{ element.category ||
-                    '未分类' }}</span>
-                </div>
-                <h4
-                  class="text-[14px] font-bold text-[#1D1D20] leading-snug mb-2 group-hover:text-[#5E6AD2] transition-colors line-clamp-1">
-                  {{ element.title }}</h4>
-
-                <div
-                  class="text-[12px] text-[#67657F] leading-snug mb-3 line-clamp-2 prose prose-xs max-w-none overflow-hidden"
-                  v-html="renderMarkdown(element.description)"></div>
-
-                <div v-if="element.due_date" class="flex items-center text-[10px] text-[#9593A3] font-semibold">
-                  <svg class="w-3.5 h-3.5 mr-1.5 text-[#D1D1D6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                  </svg>
-                  {{ formatDate(element.due_date) }}
-                </div>
-              </div>
-            </template>
-          </draggable>
-        </div>
-        <div class="flex-shrink-0 w-6 h-full"></div>
-      </div>
-    </div>
-
-    <!-- 二次确认弹窗 -->
-    <ConfirmModal 
-      :isOpen="isConfirmOpen"
-      title="删除计划"
-      message="你确定要删除这个计划吗？此操作将永久移除数据，无法撤销。"
-      @confirm="executeDelete"
-      @cancel="isConfirmOpen = false"
-    />
-  </div>
-</template>
-
-<script setup lang="ts">
-import { ref, onMounted, watch, reactive } from 'vue';
-import draggable from 'vuedraggable';
-import { marked } from 'marked';
-import api from '../api';
-import ConfirmModal from './ConfirmModal.vue'; 
-import type { Plan } from '../types';
-import { toastStore } from '../toast';
-
-const emit = defineEmits(['edit']);
-
-const plans = ref<Plan[]>([]);
-const loading = ref(true);
-const isLoggedIn = ref(!!localStorage.getItem('token'));
-
-const activeStatus = ref('all');
-const viewMode = ref<'list' | 'kanban'>('list');
-
-const isConfirmOpen = ref(false);
-const planIdToDelete = ref<number | null>(null);
-
-const kanbanColumns = reactive([
-  { id: 'pending', label: '待办 (Backlog)', items: [] as Plan[] },
-  { id: 'in_progress', label: '进行中 (Started)', items: [] as Plan[] },
-  { id: 'completed', label: '已完成 (Done)', items: [] as Plan[] }
-]);
-
-marked.setOptions({ breaks: true, gfm: true });
-
-const renderMarkdown = (content?: string) => {
-  if (!content) return '';
-  return marked.parse(content);
-};
-
-const fetchPlans = async () => {
-  loading.value = true;
-  try {
-    const params: any = {};
-    if (viewMode.value === 'list' && activeStatus.value !== 'all') params.status = activeStatus.value;
-
-    const res = await api.get<Plan[]>('/plans', { params });
-    plans.value = res.data;
-
-    kanbanColumns[0].items = plans.value.filter(p => p.status === 'pending');
-    kanbanColumns[1].items = plans.value.filter(p => p.status === 'in_progress');
-    kanbanColumns[2].items = plans.value.filter(p => p.status === 'completed');
-  } catch (error) {
-    console.error('Fetch error:', error);
-  } finally {
-    loading.value = false;
-  }
-};
-
-const handleDragChange = async (event: any, newStatus: string) => {
-  if (event.added) {
-    try {
-      await api.patch(`/plans/${event.added.element.id}`, { status: newStatus });
-      toastStore.show(`已移动到 ${formatStatus(newStatus)}`, 'info', 1500);
-    } catch (err) {
-      fetchPlans();
-    }
-  }
-};
-
-const resetFilters = () => {
-  activeStatus.value = 'all';
-  fetchPlans();
-};
-
-const setStatusFilter = (id: string) => {
-  activeStatus.value = id;
-  fetchPlans();
-};
-
-watch(viewMode, () => fetchPlans());
-
-const deletePlan = async (id: number) => {
-  planIdToDelete.value = id;
-  isConfirmOpen.value = true;
-};
-
-const executeDelete = async () => {
-  if (planIdToDelete.value === null) return;
-  try {
-    await api.delete(`/plans/${planIdToDelete.value}`);
-    toastStore.show('计划已成功删除');
-    await fetchPlans();
-  } finally {
-    isConfirmOpen.value = false;
-    planIdToDelete.value = null;
-  }
-}; 
-
-const statusColor = (s: string) => s === 'completed' ? 'bg-emerald-500' : s === 'in_progress' ? 'bg-amber-500' : 'bg-gray-300';
-const statusBgColor = (s: string) => s === 'completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : s === 'in_progress' ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-gray-50 text-gray-500 border-gray-100';
-const statusPointColor = (s: string) => s === 'completed' ? 'bg-emerald-500' : s === 'in_progress' ? 'bg-amber-500' : 'bg-gray-400';
-const priorityClass = (p: number) => {
-  if (p === 3) return 'bg-red-50 text-red-600 border-red-100';
-  if (p === 2) return 'bg-amber-50 text-amber-600 border-amber-100';
-  if (p === 1) return 'bg-blue-50 text-blue-600 border-blue-100';
-  return 'bg-gray-50 text-gray-400 border-gray-100';
-};
-const formatStatus = (s: string) => ({ pending: '待办', in_progress: '进行中', completed: '已完成' }[s] || s);
-const formatDate = (dateStr?: string) => {
-  if (!dateStr) return '无截止日期';
-  return new Date(dateStr).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
-};
-
-onMounted(fetchPlans);
-defineExpose({ fetchPlans });
-</script>
-
-<style scoped>
-.scrollbar-hide::-webkit-scrollbar { display: none; }
-.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-.line-clamp-1 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; overflow: hidden; }
-.line-clamp-2 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
-
-@keyframes slide-in-right { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-.slide-in-from-right-4 { animation: slide-in-right 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-.rotate-1 { transform: rotate(1.5deg); }
-
-:deep(.prose) { color: inherit; font-size: inherit; }
-:deep(.prose p) { margin-bottom: 0.25rem; }
-:deep(.prose strong) { font-weight: 700; color: #1d1d20; }
-:deep(.prose ul) { list-style-type: disc; padding-left: 1rem; }
-:deep(.prose ol) { list-style-type: decimal; padding-left: 1rem; }
 </style>
 </file>
 
