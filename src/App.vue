@@ -49,6 +49,7 @@
                 ref="issueListRef"
                 @back="currentProject = null"
                 @edit="handleEditIssue"
+                @create="handleOpenCreateIssue"
               />
             </template>
 
