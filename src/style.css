@@ -1,84 +1,79 @@
-/* style.css */
+/* src/style.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 body {
   @apply bg-[#FAFAFC] text-[#1D1D20];
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
 }
 
-/* Linear风格的滚动条 */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* ---------------------------------------------------------
+   Markdown 渲染 (Prose)
+--------------------------------------------------------- */
+.prose {
+  @apply text-[#1D1D20] text-[15px] leading-relaxed;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
+.prose h1 { @apply text-2xl font-bold mt-8 mb-4 tracking-tight; }
+.prose h2 { @apply text-xl font-bold mt-7 mb-3 border-b border-[#F0F0F2] pb-1 tracking-tight; }
+.prose h3 { @apply text-lg font-bold mt-6 mb-2 tracking-tight; }
+
+.prose p { @apply mb-4; }
+
+.prose ul { @apply list-disc ml-5 mb-5 space-y-1.5; }
+.prose ol { @apply list-decimal ml-5 mb-5 space-y-1.5; }
+
+/* 行内代码 */
+.prose :not(pre) > code {
+  @apply bg-[#F4F4F5] text-[#E01E5A] px-1.5 py-0.5 rounded-md text-[13px] font-mono border border-[#E6E7E8];
 }
 
-::-webkit-scrollbar-thumb {
-  background: #D1D1D6;
-  border-radius: 3px;
+/* 代码块外壳：仿 Mac 窗口 */
+.prose pre {
+  @apply relative my-6 rounded-xl border border-[#E6E7E8] bg-[#F8F9FB] overflow-hidden shadow-sm !p-0;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #B1B1B6;
+/* Mac 风格标题栏 */
+.prose pre::before {
+  content: "";
+  @apply block h-8 bg-[#F0F1F3] border-b border-[#E6E7E8];
+  background-image: radial-gradient(circle, #ff5f56 5px, transparent 6px),
+                    radial-gradient(circle, #ffbd2e 5px, transparent 6px),
+                    radial-gradient(circle, #27c93f 5px, transparent 6px);
+  background-size: 12px 12px, 12px 12px, 12px 12px;
+  background-position: 12px 10px, 32px 10px, 52px 10px;
+  background-repeat: no-repeat;
 }
 
-/* Linear风格的输入框 */
-input, textarea, select {
-  @apply transition-colors duration-200;
+/* 代码内容 */
+.prose pre code {
+  @apply block p-5 overflow-x-auto text-[13.5px] font-mono leading-normal text-[#333] bg-transparent !border-none;
 }
 
-input:focus, textarea:focus, select:focus {
-  @apply ring-0 outline-none;
+.prose blockquote {
+  @apply border-l-4 border-[#5E6AD2] pl-4 italic text-[#67657F] my-6 bg-[#F8F9FF] py-2 pr-4 rounded-r-lg;
 }
 
-/* Linear风格的按钮 */
-.btn-linear {
-  @apply px-3 py-1.5 rounded-md font-medium transition-all duration-200 border border-transparent;
+.prose strong { @apply font-bold text-[#1D1D20]; }
+
+.prose a {
+  @apply text-[#5E6AD2] underline decoration-[#5E6AD2]/30 underline-offset-4 hover:decoration-[#5E6AD2];
 }
 
-.btn-linear:hover {
-  @apply bg-opacity-90;
+/* ---------------------------------------------------------
+   UI 基础与动画
+--------------------------------------------------------- */
+.animate-in { animation-duration: 0.2s; animation-fill-mode: both; }
+@keyframes zoom-in {
+  from { opacity: 0; transform: scale(0.98) translateY(5px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
+.zoom-in { animation-name: zoom-in; }
 
-.btn-primary {
-  @apply bg-[#5E6AD2] text-white hover:bg-[#525BC2];
-}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #E6E7E8; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #D1D1D6; }
 
-.btn-secondary {
-  @apply bg-[#67657F] text-white hover:bg-[#5B5A72];
-}
-
-.btn-outline {
-  @apply bg-transparent border border-[#E6E7E8] text-[#67657F] hover:bg-white;
-}
-
-/* Linear风格的卡片 */
-.card-linear {
-  @apply bg-white rounded-lg border border-[#E6E7E8] shadow-sm transition-all duration-200;
-}
-
-/* Linear风格的标签 */
-.tag-linear {
-  @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
-}
-
-/* 定制 markdown 渲染出来的样式 */
-.prose ul, .prose ol {
-  @apply my-1 space-y-0.5;
-}
-
-.prose strong {
-  @apply text-[#1D1D20] font-bold;
-}
-
-.prose code {
-  @apply bg-gray-100 text-red-500 px-1 rounded text-xs font-mono;
-}
-
-.prose p {
-  @apply leading-relaxed;
-}
+input:focus, textarea:focus { @apply ring-0 outline-none; }

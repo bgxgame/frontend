@@ -771,6 +771,517 @@ export default defineConfig({
 }
 </file>
 
+<file path="src/components/SearchPalette.vue">
+<!-- src/components/SearchPalette.vue -->
+<template>
+  <div v-if="isOpen" class="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] px-4" @keydown="handleKeyDown">
+    <div class="absolute inset-0 bg-slate-900/20 backdrop-blur-[2px]" @click="$emit('close')"></div>
+
+    <div class="relative bg-white w-full max-w-xl rounded-xl shadow-2xl border border-[#E6E7E8] overflow-hidden animate-in fade-in zoom-in duration-200">
+      <!-- 搜索输入框 -->
+      <div class="flex items-center px-4 border-b border-[#F0F0F2]">
+        <div class="shrink-0">
+          <span v-if="loading" class="w-5 h-5 border-2 border-[#5E6AD2] border-t-transparent rounded-full animate-spin block"></span>
+          <svg v-else class="w-5 h-5 text-[#9593A3]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+        </div>
+        <input 
+          ref="inputRef"
+          v-model="query"
+          type="text" 
+          placeholder="搜索项目、任务内容..."
+          class="w-full px-3 py-4 text-[15px] outline-none font-medium placeholder:text-[#D1D1D6]"
+        />
+        <div class="px-1.5 py-0.5 border border-[#E6E7E8] rounded text-[10px] font-bold text-[#9593A3] bg-[#FAFAFC]">ESC</div>
+      </div>
+
+      <!-- 搜索结果列表 -->
+      <div class="max-h-[60vh] overflow-y-auto p-2 custom-scrollbar bg-[#FAFAFC]/30">
+        <div v-if="results.length > 0">
+          <div 
+            v-for="(item, index) in results" 
+            :key="item.type + item.id"
+            @mouseenter="selectedIndex = index"
+            @click="handleSelect(item)"
+            :class="[
+              'flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-75',
+              selectedIndex === index ? 'bg-[#5E6AD2] text-white shadow-md' : 'hover:bg-[#F0F1F2]'
+            ]"
+          >
+            <!-- 左侧图标 -->
+            <div class="shrink-0 flex items-center justify-center w-6">
+              <div v-if="item.type === 'project'" 
+                class="w-2.5 h-2.5 rounded-full"
+                :style="{ backgroundColor: selectedIndex === index ? '#fff' : (item.color || '#5E6AD2') }"
+              ></div>
+              <div v-else 
+                class="w-2 h-2 rounded-full shadow-inner"
+                :class="selectedIndex === index ? 'bg-white' : statusPointColor(item.status)"
+              ></div>
+            </div>
+
+            <!-- 文字内容 -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="text-[14px] font-semibold truncate">{{ item.title }}</span>
+                <span :class="['text-[9px] px-1.5 py-0.5 border rounded uppercase font-black tracking-tighter', selectedIndex === index ? 'border-white/30 bg-white/20 text-white' : 'border-[#E6E7E8] bg-[#FAFAFC] text-[#9593A3]']">
+                  {{ item.type }}
+                </span>
+              </div>
+              <div :class="['text-[11px] truncate font-medium mt-0.5', selectedIndex === index ? 'text-white/70' : 'text-[#9593A3]']">
+                {{ item.description || '暂无详细描述' }}
+              </div>
+            </div>
+
+            <div v-if="selectedIndex === index" class="text-[10px] font-bold opacity-80 pr-2">ENTER</div>
+          </div>
+        </div>
+        
+        <!-- 空状态/引导 -->
+        <div v-else-if="query && !loading" class="py-12 text-center text-sm text-[#9593A3]">
+          未找到与 "{{ query }}" 相关的结果
+        </div>
+        <div v-else-if="!query" class="py-12 text-center">
+          <p class="text-xs font-bold text-[#9593A3] uppercase tracking-[0.2em] mb-2">Global Search</p>
+          <p class="text-sm text-[#D1D1D6]">输入关键词搜索您的工作空间...</p>
+        </div>
+      </div>
+
+      <!-- 底部帮助栏 -->
+      <div class="px-4 py-2.5 bg-[#FAFAFC] border-t border-[#F0F0F2] flex items-center gap-5 text-[10px] font-bold text-[#9593A3] uppercase tracking-wider">
+        <span class="flex items-center gap-1.5"><span class="px-1 py-0.5 bg-white border border-[#E6E7E8] rounded text-[#67657F]">↑↓</span> 选择</span>
+        <span class="flex items-center gap-1.5"><span class="px-1 py-0.5 bg-white border border-[#E6E7E8] rounded text-[#67657F]">Enter</span> 确认</span>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, watch, nextTick } from 'vue';
+import api from '../api';
+
+const props = defineProps<{ isOpen: boolean }>();
+const emit = defineEmits(['close', 'select']);
+
+const query = ref('');
+const results = ref<any[]>([]);
+const loading = ref(false);
+const selectedIndex = ref(0);
+const inputRef = ref<HTMLInputElement | null>(null);
+
+let debounceTimer: any = null;
+
+// 核心搜索逻辑：调用后端接口
+const performSearch = async () => {
+  if (!query.value.trim()) {
+    results.value = [];
+    return;
+  }
+
+  loading.value = true;
+  try {
+    const res = await api.get('/search', { params: { q: query.value } });
+    // 接口返回的数据结构已经由后端对齐
+    results.value = res.data;
+    selectedIndex.value = 0;
+  } catch (err) {
+    console.error("搜索失败", err);
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 监听输入并执行防抖
+watch(query, () => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    performSearch();
+  }, 300); // 300ms 防抖
+});
+
+// 键盘导航
+const handleKeyDown = (e: KeyboardEvent) => {
+  if (results.value.length === 0) return;
+  
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    selectedIndex.value = (selectedIndex.value + 1) % results.value.length;
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    selectedIndex.value = (selectedIndex.value - 1 + results.value.length) % results.value.length;
+  } else if (e.key === 'Enter') {
+    const selected = results.value[selectedIndex.value];
+    if (selected) handleSelect(selected);
+  }
+};
+
+const handleSelect = (item: any) => {
+  // 注意：这里的 item 结构现在是后端返回的统一格式
+  // 需要将其包装成 App.vue 期望的 { type, data } 格式，或者修改 App.vue 的 handleSearchSelect
+  emit('select', { type: item.type, data: item });
+  emit('close');
+};
+
+watch(() => props.isOpen, (newVal) => {
+  if (newVal) {
+    query.value = '';
+    results.value = [];
+    nextTick(() => inputRef.value?.focus());
+  }
+});
+
+const statusPointColor = (s: string) => {
+  switch (s) {
+    case 'done': return 'bg-emerald-500';
+    case 'in_progress': return 'bg-amber-500';
+    default: return 'bg-gray-400';
+  }
+};
+</script>
+</file>
+
+<file path="src/components/Sidebar.vue">
+<!-- src/components/Sidebar.vue -->
+<template>
+  <aside class="w-60 h-screen bg-[#FAFAFC] border-r border-[#E6E7E8] flex flex-col shrink-0 select-none">
+    
+    <!-- 1. 用户区域 (点击触发下拉菜单) -->
+    <div class="relative px-3 py-4 mb-2 user-menu-container">
+      <div 
+        @click="isMenuOpen = !isMenuOpen"
+        class="flex items-center gap-2 px-2 py-1.5 hover:bg-[#F0F1F2] rounded-md cursor-pointer transition-colors group"
+        :class="{ 'bg-[#F0F1F2]': isMenuOpen }"
+      >
+        <!-- 头像 -->
+        <div class="w-5 h-5 bg-[#5E6AD2] rounded text-[10px] font-bold text-white flex items-center justify-center shrink-0 shadow-sm shadow-indigo-200">
+          {{ username ? username.charAt(0).toUpperCase() : 'U' }}
+        </div>
+        <!-- 用户名 -->
+        <span class="text-sm font-semibold text-[#1D1D20] truncate flex-1">{{ username || 'User' }}</span>
+        <!-- 箭头图标 (随菜单状态旋转) -->
+        <svg 
+          class="w-3.5 h-3.5 text-[#9593A3] group-hover:text-[#1D1D20] transition-transform duration-200" 
+          :class="{ 'rotate-180': isMenuOpen }"
+          fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+        </svg>
+      </div>
+
+      <!-- 用户下拉菜单 (Linear 风格) -->
+      <transition name="menu">
+        <div v-if="isMenuOpen" class="absolute left-3 right-3 top-[calc(100%-8px)] mt-1 bg-white border border-[#E6E7E8] rounded-lg shadow-xl z-50 py-1 overflow-hidden animate-in fade-in zoom-in duration-100">
+          <button 
+            @click="handleLogout" 
+            class="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium text-[#67657F] hover:bg-red-50 hover:text-red-600 transition-colors"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Logout
+          </button>
+        </div>
+      </transition>
+    </div>
+
+    <!-- 2. 导航菜单 -->
+    <nav class="flex-1 px-3 space-y-0.5">
+      <!-- Projects -->
+      <div 
+        @click="$emit('changeTab', 'projects')"
+        class="flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-medium rounded-md cursor-pointer transition-all"
+        :class="activeTab === 'projects' ? 'bg-[#EBECEF] text-[#1D1D20]' : 'text-[#67657F] hover:bg-[#F0F1F2] hover:text-[#1D1D20]'"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        </svg>
+        Projects
+      </div>
+    </nav>
+
+    <!-- 3. 底部区域 (移除了 Logout 按钮，仅保留精致的边距) -->
+    <div class="p-4">
+       <!-- 可以在这里放版本号或帮助图标 -->
+    </div>
+  </aside>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue';
+
+defineProps<{ 
+  username: string; 
+  activeTab: string; 
+}>();
+
+const emit = defineEmits(['logout', 'changeTab']);
+
+const isMenuOpen = ref(false);
+
+const handleLogout = () => {
+  isMenuOpen.value = false;
+  emit('logout');
+};
+
+// 点击外部关闭菜单
+const closeMenu = (e: MouseEvent) => {
+  if (!(e.target as HTMLElement).closest('.user-menu-container')) {
+    isMenuOpen.value = false;
+  }
+};
+
+onMounted(() => window.addEventListener('click', closeMenu));
+onUnmounted(() => window.removeEventListener('click', closeMenu));
+</script>
+
+<style scoped>
+/* 下拉菜单动画 */
+.animate-in {
+  animation-duration: 0.15s;
+  animation-fill-mode: both;
+}
+
+@keyframes zoom-in {
+  from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.zoom-in { animation-name: zoom-in; }
+
+/* 侧边栏过渡 */
+.menu-enter-active, .menu-leave-active {
+  transition: all 0.1s ease-out;
+}
+.menu-enter-from, .menu-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+</style>
+</file>
+
+<file path="src/style.css">
+/* style.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-[#FAFAFC] text-[#1D1D20];
+}
+
+/* Linear风格的滚动条 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D1D1D6;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #B1B1B6;
+}
+
+/* Linear风格的输入框 */
+input, textarea, select {
+  @apply transition-colors duration-200;
+}
+
+input:focus, textarea:focus, select:focus {
+  @apply ring-0 outline-none;
+}
+
+/* Linear风格的按钮 */
+.btn-linear {
+  @apply px-3 py-1.5 rounded-md font-medium transition-all duration-200 border border-transparent;
+}
+
+.btn-linear:hover {
+  @apply bg-opacity-90;
+}
+
+.btn-primary {
+  @apply bg-[#5E6AD2] text-white hover:bg-[#525BC2];
+}
+
+.btn-secondary {
+  @apply bg-[#67657F] text-white hover:bg-[#5B5A72];
+}
+
+.btn-outline {
+  @apply bg-transparent border border-[#E6E7E8] text-[#67657F] hover:bg-white;
+}
+
+/* Linear风格的卡片 */
+.card-linear {
+  @apply bg-white rounded-lg border border-[#E6E7E8] shadow-sm transition-all duration-200;
+}
+
+/* Linear风格的标签 */
+.tag-linear {
+  @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
+}
+
+/* 定制 markdown 渲染出来的样式 */
+.prose ul, .prose ol {
+  @apply my-1 space-y-0.5;
+}
+
+.prose strong {
+  @apply text-[#1D1D20] font-bold;
+}
+
+.prose code {
+  @apply bg-gray-100 text-red-500 px-1 rounded text-xs font-mono;
+}
+
+.prose p {
+  @apply leading-relaxed;
+}
+</file>
+
+<file path="index.html">
+<!-- index.html -->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LifePlan</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
+</file>
+
+<file path="README.md">
+# 项目总结
+
+## 1. 项目概述
+这是一个基于Vue 3 + TypeScript + Vite构建的前端项目，名为LifePlan，是一个个人计划管理系统。项目采用了Tailwind CSS作为样式框架，UI设计参考了Linear应用的风格，具有现代、简洁的界面。
+
+## 2. 技术栈
+- **前端框架**: Vue 3 (使用Composition API)
+- **编程语言**: TypeScript 5.9+
+- **构建工具**: Vite 7.2
+- **样式方案**: Tailwind CSS 3.4 + PostCSS + Autoprefixer
+- **核心依赖**: 
+  - `Axios`: API请求处理
+  - `date-fns`: 日期处理
+  - `@heroicons/vue`: 图标库
+  - `vuedraggable`: 拖拽功能支持
+  - `marked`: Markdown解析
+
+## 3. 项目架构与设计特点
+
+### 架构特点:
+- **组件化设计**: 采用高度模块化的组件设计（如LoginModal, PlanList等）
+- **TypeScript类型安全**: 全面使用TypeScript确保类型安全
+- **响应式布局**: 适配多端设备的响应式设计
+- **Linear风格UI**: 极简主义 + 柔和蓝调色 + 精致动效
+
+### 代码组织:
+- 功能模块集中在`src/components/`目录下
+- 项目入口文件为`src/App.vue`
+- API请求封装在`src/api.ts`
+- 类型定义位于`src/types.ts`
+
+## 4. 主要功能模块
+
+### 用户认证系统:
+- 管理员登录/注册功能
+- 基于Token的身份验证
+- 无感Token刷新机制（包含Access Token和Refresh Token）
+
+### 项目管理:
+- 项目列表展示
+- 创建新项目
+- 编辑/删除现有项目
+- 项目状态管理（active, completed, backlog, paused, canceled）
+
+### 任务管理:
+- 任务列表展示
+- 创建/编辑任务
+- 任务状态管理（backlog, todo, in_progress, done, canceled）
+- 优先级设置（0-4级）
+- 截止日期管理
+- 任务拖拽排序（看板模式）
+
+### 交互功能:
+- 全局搜索功能（支持项目和任务混合搜索）
+- 两种视图模式（列表模式和看板模式）
+- 拖拽功能（支持任务在不同状态间拖拽）
+- Toast消息提示系统
+
+## 5. API设计与后端集成
+- API基础URL: `http://127.0.0.1:3000/api`
+- 包含完整的CRUD操作（创建、读取、更新、删除）
+- 采用RESTful API设计
+- 包含复杂的无感刷新逻辑处理认证问题
+
+## 6. 核心组件分析
+
+### App.vue (主应用组件):
+- 控制登录/登出状态
+- 负责路由导航和状态管理
+- 集成全局搜索功能
+- 管理主要页面组件
+
+### AuthPage.vue (认证组件):
+- 提供登录/注册界面
+- 实现表单验证
+- 处理认证流程
+
+### ProjectList.vue (项目列表组件):
+- 展示项目网格
+- 支持项目创建和删除
+- 提供项目选择功能
+
+### IssueList.vue (任务列表组件):
+- 提供列表和看板两种视图
+- 支持任务拖拽排序
+- 实现任务状态管理
+
+## 7. 特殊功能亮点
+
+### 无感Token刷新机制:
+- 自动检测401错误
+- 队列管理待处理请求
+- 自动刷新Token并重新发送请求
+
+### 拖拽功能:
+- 使用vuedraggable实现任务拖拽
+- 在不同状态列之间移动任务
+- 实时更新后端数据
+
+### 全局搜索:
+- 支持项目和任务混合搜索
+- 快捷键支持（Tab+Tab或Ctrl+K）
+
+### 响应式设计:
+- 适配不同屏幕尺寸
+- 移动端友好的界面设计
+
+## 8. 开发配置
+- **开发服务器**: `npm run dev`
+- **构建生产版本**: `npm run build`
+- **预览生产版本**: `npm run preview`
+
+## 9. UI设计特色
+- **极简主义**: 大量使用留白，界面清爽
+- **柔和配色**: 使用柔和的蓝色作为主色调(#5E6AD2)
+- **精致细节**: 精细的边框、阴影和过渡效果
+- **现代交互**: 悬停效果、平滑过渡等
+</file>
+
 <file path="src/components/IssueList.vue">
 <!-- src/components/IssueList.vue -->
 <template>
@@ -1409,517 +1920,6 @@ onUnmounted(() => window.removeEventListener('click', handleOutsideClick));
 textarea { scrollbar-width: none; }
 textarea::-webkit-scrollbar { display: none; }
 </style>
-</file>
-
-<file path="src/components/SearchPalette.vue">
-<!-- src/components/SearchPalette.vue -->
-<template>
-  <div v-if="isOpen" class="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] px-4" @keydown="handleKeyDown">
-    <div class="absolute inset-0 bg-slate-900/20 backdrop-blur-[2px]" @click="$emit('close')"></div>
-
-    <div class="relative bg-white w-full max-w-xl rounded-xl shadow-2xl border border-[#E6E7E8] overflow-hidden animate-in fade-in zoom-in duration-200">
-      <!-- 搜索输入框 -->
-      <div class="flex items-center px-4 border-b border-[#F0F0F2]">
-        <div class="shrink-0">
-          <span v-if="loading" class="w-5 h-5 border-2 border-[#5E6AD2] border-t-transparent rounded-full animate-spin block"></span>
-          <svg v-else class="w-5 h-5 text-[#9593A3]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-        </div>
-        <input 
-          ref="inputRef"
-          v-model="query"
-          type="text" 
-          placeholder="搜索项目、任务内容..."
-          class="w-full px-3 py-4 text-[15px] outline-none font-medium placeholder:text-[#D1D1D6]"
-        />
-        <div class="px-1.5 py-0.5 border border-[#E6E7E8] rounded text-[10px] font-bold text-[#9593A3] bg-[#FAFAFC]">ESC</div>
-      </div>
-
-      <!-- 搜索结果列表 -->
-      <div class="max-h-[60vh] overflow-y-auto p-2 custom-scrollbar bg-[#FAFAFC]/30">
-        <div v-if="results.length > 0">
-          <div 
-            v-for="(item, index) in results" 
-            :key="item.type + item.id"
-            @mouseenter="selectedIndex = index"
-            @click="handleSelect(item)"
-            :class="[
-              'flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-75',
-              selectedIndex === index ? 'bg-[#5E6AD2] text-white shadow-md' : 'hover:bg-[#F0F1F2]'
-            ]"
-          >
-            <!-- 左侧图标 -->
-            <div class="shrink-0 flex items-center justify-center w-6">
-              <div v-if="item.type === 'project'" 
-                class="w-2.5 h-2.5 rounded-full"
-                :style="{ backgroundColor: selectedIndex === index ? '#fff' : (item.color || '#5E6AD2') }"
-              ></div>
-              <div v-else 
-                class="w-2 h-2 rounded-full shadow-inner"
-                :class="selectedIndex === index ? 'bg-white' : statusPointColor(item.status)"
-              ></div>
-            </div>
-
-            <!-- 文字内容 -->
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2">
-                <span class="text-[14px] font-semibold truncate">{{ item.title }}</span>
-                <span :class="['text-[9px] px-1.5 py-0.5 border rounded uppercase font-black tracking-tighter', selectedIndex === index ? 'border-white/30 bg-white/20 text-white' : 'border-[#E6E7E8] bg-[#FAFAFC] text-[#9593A3]']">
-                  {{ item.type }}
-                </span>
-              </div>
-              <div :class="['text-[11px] truncate font-medium mt-0.5', selectedIndex === index ? 'text-white/70' : 'text-[#9593A3]']">
-                {{ item.description || '暂无详细描述' }}
-              </div>
-            </div>
-
-            <div v-if="selectedIndex === index" class="text-[10px] font-bold opacity-80 pr-2">ENTER</div>
-          </div>
-        </div>
-        
-        <!-- 空状态/引导 -->
-        <div v-else-if="query && !loading" class="py-12 text-center text-sm text-[#9593A3]">
-          未找到与 "{{ query }}" 相关的结果
-        </div>
-        <div v-else-if="!query" class="py-12 text-center">
-          <p class="text-xs font-bold text-[#9593A3] uppercase tracking-[0.2em] mb-2">Global Search</p>
-          <p class="text-sm text-[#D1D1D6]">输入关键词搜索您的工作空间...</p>
-        </div>
-      </div>
-
-      <!-- 底部帮助栏 -->
-      <div class="px-4 py-2.5 bg-[#FAFAFC] border-t border-[#F0F0F2] flex items-center gap-5 text-[10px] font-bold text-[#9593A3] uppercase tracking-wider">
-        <span class="flex items-center gap-1.5"><span class="px-1 py-0.5 bg-white border border-[#E6E7E8] rounded text-[#67657F]">↑↓</span> 选择</span>
-        <span class="flex items-center gap-1.5"><span class="px-1 py-0.5 bg-white border border-[#E6E7E8] rounded text-[#67657F]">Enter</span> 确认</span>
-      </div>
-    </div>
-  </div>
-</template>
-
-<script setup lang="ts">
-import { ref, watch, nextTick } from 'vue';
-import api from '../api';
-
-const props = defineProps<{ isOpen: boolean }>();
-const emit = defineEmits(['close', 'select']);
-
-const query = ref('');
-const results = ref<any[]>([]);
-const loading = ref(false);
-const selectedIndex = ref(0);
-const inputRef = ref<HTMLInputElement | null>(null);
-
-let debounceTimer: any = null;
-
-// 核心搜索逻辑：调用后端接口
-const performSearch = async () => {
-  if (!query.value.trim()) {
-    results.value = [];
-    return;
-  }
-
-  loading.value = true;
-  try {
-    const res = await api.get('/search', { params: { q: query.value } });
-    // 接口返回的数据结构已经由后端对齐
-    results.value = res.data;
-    selectedIndex.value = 0;
-  } catch (err) {
-    console.error("搜索失败", err);
-  } finally {
-    loading.value = false;
-  }
-};
-
-// 监听输入并执行防抖
-watch(query, () => {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(() => {
-    performSearch();
-  }, 300); // 300ms 防抖
-});
-
-// 键盘导航
-const handleKeyDown = (e: KeyboardEvent) => {
-  if (results.value.length === 0) return;
-  
-  if (e.key === 'ArrowDown') {
-    e.preventDefault();
-    selectedIndex.value = (selectedIndex.value + 1) % results.value.length;
-  } else if (e.key === 'ArrowUp') {
-    e.preventDefault();
-    selectedIndex.value = (selectedIndex.value - 1 + results.value.length) % results.value.length;
-  } else if (e.key === 'Enter') {
-    const selected = results.value[selectedIndex.value];
-    if (selected) handleSelect(selected);
-  }
-};
-
-const handleSelect = (item: any) => {
-  // 注意：这里的 item 结构现在是后端返回的统一格式
-  // 需要将其包装成 App.vue 期望的 { type, data } 格式，或者修改 App.vue 的 handleSearchSelect
-  emit('select', { type: item.type, data: item });
-  emit('close');
-};
-
-watch(() => props.isOpen, (newVal) => {
-  if (newVal) {
-    query.value = '';
-    results.value = [];
-    nextTick(() => inputRef.value?.focus());
-  }
-});
-
-const statusPointColor = (s: string) => {
-  switch (s) {
-    case 'done': return 'bg-emerald-500';
-    case 'in_progress': return 'bg-amber-500';
-    default: return 'bg-gray-400';
-  }
-};
-</script>
-</file>
-
-<file path="src/components/Sidebar.vue">
-<!-- src/components/Sidebar.vue -->
-<template>
-  <aside class="w-60 h-screen bg-[#FAFAFC] border-r border-[#E6E7E8] flex flex-col shrink-0 select-none">
-    
-    <!-- 1. 用户区域 (点击触发下拉菜单) -->
-    <div class="relative px-3 py-4 mb-2 user-menu-container">
-      <div 
-        @click="isMenuOpen = !isMenuOpen"
-        class="flex items-center gap-2 px-2 py-1.5 hover:bg-[#F0F1F2] rounded-md cursor-pointer transition-colors group"
-        :class="{ 'bg-[#F0F1F2]': isMenuOpen }"
-      >
-        <!-- 头像 -->
-        <div class="w-5 h-5 bg-[#5E6AD2] rounded text-[10px] font-bold text-white flex items-center justify-center shrink-0 shadow-sm shadow-indigo-200">
-          {{ username ? username.charAt(0).toUpperCase() : 'U' }}
-        </div>
-        <!-- 用户名 -->
-        <span class="text-sm font-semibold text-[#1D1D20] truncate flex-1">{{ username || 'User' }}</span>
-        <!-- 箭头图标 (随菜单状态旋转) -->
-        <svg 
-          class="w-3.5 h-3.5 text-[#9593A3] group-hover:text-[#1D1D20] transition-transform duration-200" 
-          :class="{ 'rotate-180': isMenuOpen }"
-          fill="none" stroke="currentColor" viewBox="0 0 24 24"
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
-        </svg>
-      </div>
-
-      <!-- 用户下拉菜单 (Linear 风格) -->
-      <transition name="menu">
-        <div v-if="isMenuOpen" class="absolute left-3 right-3 top-[calc(100%-8px)] mt-1 bg-white border border-[#E6E7E8] rounded-lg shadow-xl z-50 py-1 overflow-hidden animate-in fade-in zoom-in duration-100">
-          <button 
-            @click="handleLogout" 
-            class="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium text-[#67657F] hover:bg-red-50 hover:text-red-600 transition-colors"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            Logout
-          </button>
-        </div>
-      </transition>
-    </div>
-
-    <!-- 2. 导航菜单 -->
-    <nav class="flex-1 px-3 space-y-0.5">
-      <!-- Projects -->
-      <div 
-        @click="$emit('changeTab', 'projects')"
-        class="flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-medium rounded-md cursor-pointer transition-all"
-        :class="activeTab === 'projects' ? 'bg-[#EBECEF] text-[#1D1D20]' : 'text-[#67657F] hover:bg-[#F0F1F2] hover:text-[#1D1D20]'"
-      >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-        </svg>
-        Projects
-      </div>
-    </nav>
-
-    <!-- 3. 底部区域 (移除了 Logout 按钮，仅保留精致的边距) -->
-    <div class="p-4">
-       <!-- 可以在这里放版本号或帮助图标 -->
-    </div>
-  </aside>
-</template>
-
-<script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
-
-defineProps<{ 
-  username: string; 
-  activeTab: string; 
-}>();
-
-const emit = defineEmits(['logout', 'changeTab']);
-
-const isMenuOpen = ref(false);
-
-const handleLogout = () => {
-  isMenuOpen.value = false;
-  emit('logout');
-};
-
-// 点击外部关闭菜单
-const closeMenu = (e: MouseEvent) => {
-  if (!(e.target as HTMLElement).closest('.user-menu-container')) {
-    isMenuOpen.value = false;
-  }
-};
-
-onMounted(() => window.addEventListener('click', closeMenu));
-onUnmounted(() => window.removeEventListener('click', closeMenu));
-</script>
-
-<style scoped>
-/* 下拉菜单动画 */
-.animate-in {
-  animation-duration: 0.15s;
-  animation-fill-mode: both;
-}
-
-@keyframes zoom-in {
-  from { opacity: 0; transform: scale(0.95) translateY(-10px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-.zoom-in { animation-name: zoom-in; }
-
-/* 侧边栏过渡 */
-.menu-enter-active, .menu-leave-active {
-  transition: all 0.1s ease-out;
-}
-.menu-enter-from, .menu-leave-to {
-  opacity: 0;
-  transform: translateY(-4px);
-}
-</style>
-</file>
-
-<file path="src/style.css">
-/* style.css */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-body {
-  @apply bg-[#FAFAFC] text-[#1D1D20];
-}
-
-/* Linear风格的滚动条 */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #D1D1D6;
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #B1B1B6;
-}
-
-/* Linear风格的输入框 */
-input, textarea, select {
-  @apply transition-colors duration-200;
-}
-
-input:focus, textarea:focus, select:focus {
-  @apply ring-0 outline-none;
-}
-
-/* Linear风格的按钮 */
-.btn-linear {
-  @apply px-3 py-1.5 rounded-md font-medium transition-all duration-200 border border-transparent;
-}
-
-.btn-linear:hover {
-  @apply bg-opacity-90;
-}
-
-.btn-primary {
-  @apply bg-[#5E6AD2] text-white hover:bg-[#525BC2];
-}
-
-.btn-secondary {
-  @apply bg-[#67657F] text-white hover:bg-[#5B5A72];
-}
-
-.btn-outline {
-  @apply bg-transparent border border-[#E6E7E8] text-[#67657F] hover:bg-white;
-}
-
-/* Linear风格的卡片 */
-.card-linear {
-  @apply bg-white rounded-lg border border-[#E6E7E8] shadow-sm transition-all duration-200;
-}
-
-/* Linear风格的标签 */
-.tag-linear {
-  @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
-}
-
-/* 定制 markdown 渲染出来的样式 */
-.prose ul, .prose ol {
-  @apply my-1 space-y-0.5;
-}
-
-.prose strong {
-  @apply text-[#1D1D20] font-bold;
-}
-
-.prose code {
-  @apply bg-gray-100 text-red-500 px-1 rounded text-xs font-mono;
-}
-
-.prose p {
-  @apply leading-relaxed;
-}
-</file>
-
-<file path="index.html">
-<!-- index.html -->
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LifePlan</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
-  </body>
-</html>
-</file>
-
-<file path="README.md">
-# 项目总结
-
-## 1. 项目概述
-这是一个基于Vue 3 + TypeScript + Vite构建的前端项目，名为LifePlan，是一个个人计划管理系统。项目采用了Tailwind CSS作为样式框架，UI设计参考了Linear应用的风格，具有现代、简洁的界面。
-
-## 2. 技术栈
-- **前端框架**: Vue 3 (使用Composition API)
-- **编程语言**: TypeScript 5.9+
-- **构建工具**: Vite 7.2
-- **样式方案**: Tailwind CSS 3.4 + PostCSS + Autoprefixer
-- **核心依赖**: 
-  - `Axios`: API请求处理
-  - `date-fns`: 日期处理
-  - `@heroicons/vue`: 图标库
-  - `vuedraggable`: 拖拽功能支持
-  - `marked`: Markdown解析
-
-## 3. 项目架构与设计特点
-
-### 架构特点:
-- **组件化设计**: 采用高度模块化的组件设计（如LoginModal, PlanList等）
-- **TypeScript类型安全**: 全面使用TypeScript确保类型安全
-- **响应式布局**: 适配多端设备的响应式设计
-- **Linear风格UI**: 极简主义 + 柔和蓝调色 + 精致动效
-
-### 代码组织:
-- 功能模块集中在`src/components/`目录下
-- 项目入口文件为`src/App.vue`
-- API请求封装在`src/api.ts`
-- 类型定义位于`src/types.ts`
-
-## 4. 主要功能模块
-
-### 用户认证系统:
-- 管理员登录/注册功能
-- 基于Token的身份验证
-- 无感Token刷新机制（包含Access Token和Refresh Token）
-
-### 项目管理:
-- 项目列表展示
-- 创建新项目
-- 编辑/删除现有项目
-- 项目状态管理（active, completed, backlog, paused, canceled）
-
-### 任务管理:
-- 任务列表展示
-- 创建/编辑任务
-- 任务状态管理（backlog, todo, in_progress, done, canceled）
-- 优先级设置（0-4级）
-- 截止日期管理
-- 任务拖拽排序（看板模式）
-
-### 交互功能:
-- 全局搜索功能（支持项目和任务混合搜索）
-- 两种视图模式（列表模式和看板模式）
-- 拖拽功能（支持任务在不同状态间拖拽）
-- Toast消息提示系统
-
-## 5. API设计与后端集成
-- API基础URL: `http://127.0.0.1:3000/api`
-- 包含完整的CRUD操作（创建、读取、更新、删除）
-- 采用RESTful API设计
-- 包含复杂的无感刷新逻辑处理认证问题
-
-## 6. 核心组件分析
-
-### App.vue (主应用组件):
-- 控制登录/登出状态
-- 负责路由导航和状态管理
-- 集成全局搜索功能
-- 管理主要页面组件
-
-### AuthPage.vue (认证组件):
-- 提供登录/注册界面
-- 实现表单验证
-- 处理认证流程
-
-### ProjectList.vue (项目列表组件):
-- 展示项目网格
-- 支持项目创建和删除
-- 提供项目选择功能
-
-### IssueList.vue (任务列表组件):
-- 提供列表和看板两种视图
-- 支持任务拖拽排序
-- 实现任务状态管理
-
-## 7. 特殊功能亮点
-
-### 无感Token刷新机制:
-- 自动检测401错误
-- 队列管理待处理请求
-- 自动刷新Token并重新发送请求
-
-### 拖拽功能:
-- 使用vuedraggable实现任务拖拽
-- 在不同状态列之间移动任务
-- 实时更新后端数据
-
-### 全局搜索:
-- 支持项目和任务混合搜索
-- 快捷键支持（Tab+Tab或Ctrl+K）
-
-### 响应式设计:
-- 适配不同屏幕尺寸
-- 移动端友好的界面设计
-
-## 8. 开发配置
-- **开发服务器**: `npm run dev`
-- **构建生产版本**: `npm run build`
-- **预览生产版本**: `npm run preview`
-
-## 9. UI设计特色
-- **极简主义**: 大量使用留白，界面清爽
-- **柔和配色**: 使用柔和的蓝色作为主色调(#5E6AD2)
-- **精致细节**: 精细的边框、阴影和过渡效果
-- **现代交互**: 悬停效果、平滑过渡等
 </file>
 
 <file path="src/types.ts">
