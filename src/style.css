@@ -34,7 +34,7 @@ body {
   @apply relative my-6 rounded-xl border border-[#E6E7E8] bg-[#F8F9FB] overflow-hidden shadow-sm !p-0;
 }
 
-/* Mac 风格标题栏 */
+/* Mac 风格标题栏装饰 */
 .prose pre::before {
   content: "";
   @apply block h-8 bg-[#F0F1F3] border-b border-[#E6E7E8];
@@ -46,7 +46,7 @@ body {
   background-repeat: no-repeat;
 }
 
-/* 代码内容 */
+/* 代码内容具体样式 */
 .prose pre code {
   @apply block p-5 overflow-x-auto text-[13.5px] font-mono leading-normal text-[#333] bg-transparent !border-none;
 }
@@ -62,7 +62,7 @@ body {
 }
 
 /* ---------------------------------------------------------
-   UI 基础与动画
+   UI 基础样式
 --------------------------------------------------------- */
 .animate-in { animation-duration: 0.2s; animation-fill-mode: both; }
 @keyframes zoom-in {

@@ -7,7 +7,7 @@
     <!-- 弹窗主体 -->
     <div class="relative bg-white w-full max-w-[1200px] h-full md:h-[92vh] rounded-none md:rounded-xl shadow-2xl border border-[#E6E7E8] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
       
-      <!-- Header -->
+      <!-- 顶部 Header -->
       <header class="h-12 border-b border-[#F0F0F2] flex items-center justify-between px-4 shrink-0 bg-white">
         <div class="flex items-center gap-3 text-[13px] text-[#67657F] min-w-0">
           <span class="hover:text-[#1D1D20] cursor-pointer shrink-0">Workspace</span>
@@ -16,17 +16,20 @@
             {{ isEditMode ? (form.title || 'Untitled Issue') : 'New Issue' }}
           </span>
         </div>
-        <button @click="handleCancel" class="p-1.5 hover:bg-gray-100 rounded text-[#9593A3] transition-colors">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg>
-        </button>
+        <div class="flex items-center gap-2 shrink-0">
+          <button @click="handleCancel" class="p-1.5 hover:bg-gray-100 rounded text-[#9593A3] transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
       </header>
 
+      <!-- 中间内容区 -->
       <div class="flex-1 flex overflow-hidden">
-        <!-- 主编辑区 -->
+        <!-- 左侧：主要编辑器 -->
         <main class="flex-1 overflow-y-auto custom-scrollbar p-8 md:p-12 bg-white">
           <div class="max-w-[850px] mx-auto space-y-8">
             
-            <!-- 标题 (自动增高) -->
+            <!-- 标题编辑器 (自动增高) -->
             <textarea 
               ref="titleRef"
               v-model="form.title" 
@@ -36,37 +39,38 @@
               @input="autoGrow"
             ></textarea>
 
-            <!-- 描述/Markdown 区域 -->
+            <!-- 描述/Markdown 编辑器区域 -->
             <div class="min-h-[450px] group relative">
-              <!-- 编辑模式：输入框 -->
+              <!-- 编辑模式 (输入框) -->
               <textarea 
                 v-if="isEditingDesc || !form.description"
                 ref="descRef"
                 v-model="form.description" 
-                placeholder="添加详细描述（支持 Markdown 语法，如：# 标题，``` 代码块）..."
+                placeholder="添加详细描述（支持 Markdown，如：# 标题, ``` 代码块）..."
                 class="w-full min-h-[450px] text-[15px] border-none outline-none resize-none placeholder:text-[#D1D1D6] focus:ring-0 p-0 leading-relaxed text-[#1D1D20] bg-transparent"
                 @blur="isEditingDesc = false"
                 @input="autoGrow"
               ></textarea>
 
-              <!-- 预览模式：Markdown 渲染 -->
+              <!-- 预览模式 (Marked 渲染 HTML) -->
               <div 
                 v-else
                 @click="focusDesc"
-                class="prose prose-slate max-w-none text-[15px] cursor-text min-h-[450px]"
+                class="prose prose-slate max-w-none text-[15px] leading-relaxed text-[#1D1D20] cursor-text min-h-[450px]"
                 v-html="parsedMarkdown"
               ></div>
               
-              <div v-if="!isEditingDesc && form.description" class="absolute top-0 -right-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                <span class="text-[10px] font-bold text-[#9593A3] bg-[#FAFAFC] px-1.5 py-0.5 border rounded">点击编辑</span>
+              <!-- 悬浮编辑提示 -->
+              <div v-if="!isEditingDesc && form.description" class="absolute top-0 -right-12 opacity-0 group-hover:opacity-100 transition-opacity">
+                <span class="text-[10px] font-black text-[#9593A3] bg-[#FAFAFC] px-1.5 py-0.5 border rounded uppercase tracking-tighter">Edit</span>
               </div>
             </div>
 
-            <!-- 评论/动态区域 -->
+            <!-- Activity 动态与评论区 -->
             <section v-if="isEditMode" class="pt-10 border-t border-[#F0F0F2] space-y-8">
-              <h3 class="text-sm font-bold text-[#1D1D20]">Activity</h3>
+              <h3 class="text-sm font-bold text-[#1D1D20] tracking-tight">Activity</h3>
+              
               <div class="space-y-6">
-                <!-- 初始创建记录 -->
                 <div class="flex items-start gap-3">
                   <div class="w-6 h-6 bg-[#5E6AD2] rounded-full flex items-center justify-center text-[10px] text-white font-bold shrink-0">U</div>
                   <div class="text-[13px] text-[#67657F] mt-0.5">
@@ -75,8 +79,7 @@
                   </div>
                 </div>
 
-                <!-- 评论列表 -->
-                <div v-for="comment in comments" :key="comment.id" class="flex items-start gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div v-for="comment in comments" :key="comment.id" class="flex items-start gap-3">
                   <div class="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-[10px] text-[#67657F] font-bold shrink-0">
                     {{ comment.username.charAt(0).toUpperCase() }}
                   </div>
@@ -90,19 +93,25 @@
                     </div>
                   </div>
                 </div>
+
+                <div v-if="commentLoading" class="flex justify-center py-4">
+                  <div class="w-4 h-4 border-2 border-[#5E6AD2] border-t-transparent rounded-full animate-spin"></div>
+                </div>
               </div>
 
-              <!-- 评论输入 -->
-              <div class="mt-8 border border-[#E6E7E8] rounded-xl focus-within:border-[#5E6AD2] focus-within:ring-4 focus-within:ring-[#5E6AD2]/5 overflow-hidden bg-white">
+              <!-- 评论框 -->
+              <div class="mt-8 border border-[#E6E7E8] rounded-xl focus-within:border-[#5E6AD2] focus-within:ring-4 focus-within:ring-[#5E6AD2]/5 transition-all overflow-hidden bg-white shadow-sm">
                 <textarea 
                   v-model="commentText"
                   placeholder="留下一条记录 ..."
                   class="w-full p-4 text-[14px] border-none outline-none focus:ring-0 resize-none min-h-[100px]"
                 ></textarea>
                 <div class="flex justify-end px-4 py-2 bg-[#FAFAFC] border-t border-[#F0F0F2]">
-                  <button @click="handlePostComment" :disabled="!commentText.trim() || postingComment"
-                    class="bg-[#5E6AD2] text-white px-4 py-1.5 rounded-md text-[12px] font-bold hover:bg-[#525BC2] disabled:opacity-40 flex items-center gap-2">
-                    <span v-if="postingComment" class="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                  <button 
+                    @click="handlePostComment"
+                    :disabled="!commentText.trim() || postingComment"
+                    class="bg-[#5E6AD2] text-white px-4 py-1.5 rounded-md text-[12px] font-bold hover:bg-[#525BC2] disabled:opacity-40 transition-all"
+                  >
                     Comment
                   </button>
                 </div>
@@ -111,14 +120,15 @@
           </div>
         </main>
 
-        <!-- 右侧面板 -->
-        <aside class="w-[280px] border-l border-[#F0F0F2] bg-[#FAFAFC]/50 p-6 hidden lg:block space-y-8">
+        <!-- 右侧：属性面板 -->
+        <aside class="w-[280px] border-l border-[#F0F0F2] bg-[#FAFAFC]/50 overflow-y-auto p-6 hidden lg:block space-y-8">
           <div>
             <h4 class="text-[11px] font-bold text-[#9593A3] uppercase tracking-wider mb-4">Properties</h4>
             <div class="space-y-1">
+              <!-- 状态 -->
               <div class="relative menu-container">
                 <div @click.stop="activeMenu = activeMenu === 'status' ? null : 'status'"
-                  class="flex items-center justify-between px-2 py-1.5 hover:bg-[#F0F1F2] rounded-md cursor-pointer group">
+                  class="flex items-center justify-between px-2 py-1.5 hover:bg-[#F0F1F2] rounded-md transition-colors cursor-pointer group">
                   <span class="text-[13px] text-[#67657F]">Status</span>
                   <div class="flex items-center gap-2">
                     <span :class="['w-2 h-2 rounded-full', statusPointColor(form.status)]"></span>
@@ -134,9 +144,10 @@
                 </div>
               </div>
 
+              <!-- 优先级 -->
               <div class="relative menu-container">
                 <div @click.stop="activeMenu = activeMenu === 'priority' ? null : 'priority'"
-                  class="flex items-center justify-between px-2 py-1.5 hover:bg-[#F0F1F2] rounded-md cursor-pointer group">
+                  class="flex items-center justify-between px-2 py-1.5 hover:bg-[#F0F1F2] rounded-md transition-colors cursor-pointer group">
                   <span class="text-[13px] text-[#67657F]">Priority</span>
                   <span class="text-[13px] font-semibold text-[#1D1D20]">{{ formatPriority(form.priority) }}</span>
                 </div>
@@ -148,22 +159,30 @@
                 </div>
               </div>
 
+              <!-- 截止日期 -->
               <div class="flex items-center justify-between px-2 py-1.5 hover:bg-[#F0F1F2] rounded-md transition-colors">
                 <span class="text-[13px] text-[#67657F]">Due Date</span>
-                <input type="date" v-model="form.due_date" class="bg-transparent border-none text-[12px] font-semibold p-0 focus:ring-0 text-right w-32 text-[#1D1D20]" />
+                <input type="date" v-model="form.due_date" class="bg-transparent border-none text-[12px] font-semibold p-0 focus:ring-0 text-right w-32 text-[#1D1D20] cursor-pointer" />
               </div>
+            </div>
+          </div>
+
+          <div>
+            <h4 class="text-[11px] font-bold text-[#9593A3] uppercase tracking-wider mb-3">Project</h4>
+            <div class="flex items-center gap-2 px-3 py-2 bg-white border border-[#E6E7E8] rounded-lg shadow-sm">
+               <div class="w-2 h-2 rounded-full bg-[#5E6AD2]"></div>
+               <span class="text-[13px] font-semibold text-[#1D1D20] truncate">{{ projectName || 'Unassigned' }}</span>
             </div>
           </div>
         </aside>
       </div>
 
-      <!-- 底部操作 -->
+      <!-- 底部操作栏 -->
       <footer class="p-4 border-t border-[#F0F0F2] flex justify-end gap-3 bg-white shrink-0">
-        <button @click="handleCancel" class="px-4 py-2 text-xs font-bold text-[#67657F] hover:bg-gray-100 rounded-md">取消</button>
+        <button @click="handleCancel" class="px-4 py-2 text-xs font-bold text-[#67657F] hover:bg-gray-100 rounded-md transition-all">取消</button>
         <button @click="handleSubmit" :disabled="loading || !form.title.trim()"
-          class="px-5 py-2 text-xs font-bold text-white bg-[#5E6AD2] rounded-md hover:bg-[#525BC2] shadow-md flex items-center gap-2">
-          <span v-if="loading" class="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-          {{ isEditMode ? '更新任务' : '保存修改' }}
+          class="px-5 py-2 text-xs font-bold text-white bg-[#5E6AD2] rounded-md hover:bg-[#525BC2] shadow-md transition-all">
+          {{ isEditMode ? '保存修改' : '创建任务' }}
         </button>
       </footer>
     </div>
@@ -174,7 +193,7 @@
 import { ref, watch, computed, nextTick, onMounted, onUnmounted } from 'vue';
 import { marked } from 'marked';
 import hljs from 'highlight.js';
-import 'highlight.js/styles/github.css'; // 使用 GitHub 风格的高亮
+import 'highlight.js/styles/github.css'; // 引入语法高亮 CSS
 
 import api from '../api';
 import type { Issue, Comment } from '../types';
@@ -189,7 +208,7 @@ const props = defineProps<{
 
 const emit = defineEmits(['close', 'saved']);
 
-// 状态管理
+// 状态
 const loading = ref(false);
 const commentLoading = ref(false);
 const postingComment = ref(false);
@@ -197,24 +216,36 @@ const commentText = ref('');
 const comments = ref<Comment[]>([]);
 const activeMenu = ref<string | null>(null);
 const isEditingDesc = ref(false);
+
+// 元素引用
 const titleRef = ref<HTMLTextAreaElement | null>(null);
 const descRef = ref<HTMLTextAreaElement | null>(null);
 
-const form = ref<any>({ project_id: 0, title: '', description: '', status: 'todo', priority: 0, due_date: '' });
-const isEditMode = computed(() => !!props.editData);
-
-// 配置 marked + highlight.js
-marked.setOptions({
-  highlight: function(code, lang) {
-    const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-    return hljs.highlight(code, { language }).value;
-  },
-  langPrefix: 'hljs language-',
+// ------------------------------------------------------------------
+// 配置 Marked 解析器 (兼容 v12+)
+// ------------------------------------------------------------------
+marked.use({
+  renderer: {
+    // 新版 renderer.code 只接收一个包含所有属性的对象参数
+    code(token: any) {
+      const codeText = token.text || '';
+      const lang = token.lang || 'plaintext';
+      const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+      const highlighted = hljs.highlight(codeText, { language }).value;
+      return `<pre><code class="hljs language-${language}">${highlighted}</code></pre>`;
+    }
+  }
 });
 
 const parsedMarkdown = computed(() => marked.parse(form.value.description || ''));
 
-// 功能函数
+// ------------------------------------------------------------------
+// 核心逻辑
+// ------------------------------------------------------------------
+
+const form = ref<any>({ project_id: 0, title: '', description: '', status: 'todo', priority: 0, due_date: '' });
+const isEditMode = computed(() => !!props.editData);
+
 const focusDesc = async () => {
   isEditingDesc.value = true;
   await nextTick();
