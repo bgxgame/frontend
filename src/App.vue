@@ -9,14 +9,12 @@
     <!-- 2. 已登录状态 -->
     <div v-else class="flex h-screen w-full bg-white overflow-hidden relative">
       
-      <!-- 手机端侧边栏遮罩 -->
       <div 
         v-if="isSidebarOpen" 
         @click="isSidebarOpen = false" 
         class="lg:hidden fixed inset-0 bg-slate-900/40 z-[45] backdrop-blur-sm transition-opacity"
       ></div>
 
-      <!-- 侧边栏：集成折叠与响应式逻辑 -->
       <Sidebar 
         :username="username" 
         :activeTab="activeTab"
@@ -29,12 +27,9 @@
         @changeTab="(tab) => { handleTabChange(tab); isSidebarOpen = false; }"
       />
 
-      <!-- 右侧主内容 -->
       <div class="flex-1 flex flex-col min-w-0 h-full bg-white relative transition-all duration-300">
-        <!-- 顶部导航栏 -->
         <header class="h-12 border-b border-[#F0F0F2] flex items-center px-4 shrink-0 justify-between bg-white z-30">
           <div class="flex items-center gap-2 min-w-0">
-            <!-- PC端折叠/展开按钮 -->
             <button 
               @click="isSidebarCollapsed = !isSidebarCollapsed" 
               class="hidden lg:flex p-1.5 hover:bg-gray-100 rounded-md text-[#67657F] transition-colors"
@@ -46,7 +41,6 @@
               </svg>
             </button>
 
-            <!-- 手机端汉堡菜单 -->
             <button 
               @click="isSidebarOpen = true" 
               class="lg:hidden p-1.5 hover:bg-gray-100 rounded-md text-[#67657F]"
@@ -56,7 +50,6 @@
               </svg>
             </button>
 
-            <!-- 面包屑 -->
             <div class="flex items-center gap-1 text-[13px] overflow-hidden ml-1">
               <span class="text-[#9593A3] font-medium hidden xs:inline">Workspace</span>
               <span class="text-[#D1D1D6] hidden xs:inline">/</span>
@@ -74,12 +67,8 @@
             </div>
           </div>
 
-          <button @click="showSearch = true" class="p-1.5 text-[#9593A3] hover:text-[#5E6AD2] transition-colors">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-          </button>
         </header>
 
-        <!-- 内容区域 -->
         <main class="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar bg-white">
           <div class="w-full max-w-[1400px] mx-auto p-4 md:p-8">
             <template v-if="activeTab === 'projects'">
@@ -103,7 +92,6 @@
         </main>
       </div>
 
-      <!-- 组件容器 -->
       <SearchPalette :isOpen="showSearch" @close="showSearch = false" @select="handleSearchSelect" />
       <IssueModal :isOpen="showIssueModal" :editData="currentEditIssue" :defaultProjectId="currentProject?.id" :projectName="currentProject?.name" @close="closeIssueModal" @saved="handleIssueSaved" />
       <ToastContainer />
@@ -112,7 +100,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import Sidebar from './components/Sidebar.vue';
 import AuthPage from './components/AuthPage.vue';
 import ProjectList from './components/ProjectList.vue';
@@ -134,6 +122,9 @@ const showSearch = ref(false);
 const showIssueModal = ref(false);
 const currentEditIssue = ref<Issue | null>(null);
 const issueListRef = ref();
+
+// 用于追踪 Tab 双击逻辑
+let lastTabTime = 0;
 
 const handleLoginSuccess = () => {
   isLoggedIn.value = true;
@@ -183,4 +174,35 @@ const handleSearchSelect = (item: { type: string, data: any }) => {
     handleEditIssue(item.data);
   }
 };
+
+// ---------------------------------------------------------
+// 快捷键监听逻辑
+// ---------------------------------------------------------
+const handleKeyDown = (e: KeyboardEvent) => {
+  // 1. Tab + Tab 逻辑
+  if (e.key === 'Tab') {
+    const now = Date.now();
+    if (now - lastTabTime < 300) {
+      e.preventDefault();
+      showSearch.value = !showSearch.value;
+      lastTabTime = 0; // 重置
+    } else {
+      lastTabTime = now;
+    }
+  }
+
+  // 2. Ctrl/Cmd + K 逻辑
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault();
+    showSearch.value = !showSearch.value;
+  }
+};
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyDown);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown);
+});
 </script>
